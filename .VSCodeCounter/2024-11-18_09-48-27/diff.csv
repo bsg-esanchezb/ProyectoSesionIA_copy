@@ -1,0 +1,22 @@
+"filename", "language", "Python", "TXT", "Markdown", "pip requirements", "comment", "blank", "total"
+"c:\Users\esanchezb\Documents\Project_cafe_v2\README.md", "Markdown", 0, 0, 85, 0, 0, 0, 85
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\output\transcriptions\1020744959_OCTUBRE-17-10-24-PI_GERPROY_CONST_ONLINE_2024_II_LIMA_-_Curso_Gestión_de_la_Calidad_en_Proyectos_de_Co-16-10-24_transcription.txt", "TXT", 0, 1, 0, 0, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\output\transcriptions\1020745600_OCTUBRE-17-10-24-AUTODESK_BIM_ONLINE_2024_I_CDMEXICO_-_MS_Project_para_la_gestión_de_Proyectos_BIM_ON-16-10-24_transcription.txt", "TXT", 0, 1, 0, 0, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\output\transcriptions\summary_2.txt", "TXT", 0, 43, 0, 0, 11, 10, 64
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\output\transcriptions\transcription.txt", "TXT", 0, 1, 0, 0, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_AUTODESK_BIM_ONLINE_2024_I_CDMEXICO_MS_Project_para_la_gesti_n_de_Proyectos_BIM_ON_16_10_24_summary.txt", "TXT", 0, -40, 0, 0, -9, -14, -63
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_AUTODESK_BIM_ONLINE_2024_I_CDMEXICO_MS_Project_para_la_gesti_n_de_Proyectos_BIM_ON_16_10_24_transcription.txt", "TXT", 0, -1, 0, 0, 0, 0, -1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_PI_GERPROY_CONST_ONLINE_2024_II_LIMA_Curso_Gesti_n_de_la_Calidad_en_Proyectos_de_Co_16_10_24_summary.txt", "TXT", 0, -55, 0, 0, -5, -14, -74
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_PI_GERPROY_CONST_ONLINE_2024_II_LIMA_Curso_Gesti_n_de_la_Calidad_en_Proyectos_de_Co_16_10_24_transcription.txt", "TXT", 0, -1, 0, 0, 0, 0, -1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\podcast.txt", "TXT", 0, 10, 0, 0, 0, 9, 19
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\summaries\transcription_summary.txt", "TXT", 0, 45, 0, 0, 17, 15, 77
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\transcriptions\transcription.txt", "TXT", 0, 1, 0, 0, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\requirements.txt", "pip requirements", 0, 0, 0, 92, 0, 0, 92
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\api.py", "Python", 147, 0, 0, 0, 20, 34, 201
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\service.py", "Python", -7, 0, 0, 0, 0, -3, -10
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_audio\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_audio\text_to_audio.py", "Python", 84, 0, 0, 0, 11, 24, 119
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_concept_map\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_concept_map\debug_mermaid.txt", "TXT", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_concept_map\text_to_concept_map.py", "Python", 92, 0, 0, 0, 11, 25, 128
+"Total", "-", 316, 5, 85, 92, 56, 89, 643

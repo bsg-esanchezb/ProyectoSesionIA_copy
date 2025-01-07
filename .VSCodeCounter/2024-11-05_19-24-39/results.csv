@@ -1,0 +1,27 @@
+"filename", "language", "Python", "Markdown", "pip requirements", "TXT", "comment", "blank", "total"
+"c:\Users\esanchezb\Documents\Project_cafe_v2\README.md", "Markdown", 0, 334, 0, 0, 0, 2, 336
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_AUTODESK_BIM_ONLINE_2024_I_CDMEXICO_MS_Project_para_la_gesti_n_de_Proyectos_BIM_ON_16_10_24_summary.txt", "TXT", 0, 0, 0, 40, 9, 14, 63
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_AUTODESK_BIM_ONLINE_2024_I_CDMEXICO_MS_Project_para_la_gesti_n_de_Proyectos_BIM_ON_16_10_24_transcription.txt", "TXT", 0, 0, 0, 1, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_PI_GERPROY_CONST_ONLINE_2024_II_LIMA_Curso_Gesti_n_de_la_Calidad_en_Proyectos_de_Co_16_10_24_summary.txt", "TXT", 0, 0, 0, 55, 5, 14, 74
+"c:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\OCTUBRE_17_10_24_PI_GERPROY_CONST_ONLINE_2024_II_LIMA_Curso_Gesti_n_de_la_Calidad_en_Proyectos_de_Co_16_10_24_transcription.txt", "TXT", 0, 0, 0, 1, 0, 0, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\requirements.txt", "pip requirements", 0, 0, 87, 0, 0, 0, 87
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\audio_extraction\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\audio_extraction\extract_audio.py", "Python", 17, 0, 0, 0, 4, 7, 28
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\download_video\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\download_video\download_video.py", "Python", 78, 0, 0, 0, 13, 15, 106
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\main.py", "Python", 61, 0, 0, 0, 13, 24, 98
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\main_test.py", "Python", 9, 0, 0, 0, 3, 3, 15
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\service.py", "Python", 7, 0, 0, 0, 0, 3, 10
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\summarization\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\summarization\summarization.py", "Python", 96, 0, 0, 0, 4, 19, 119
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_pdf\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\text_to_pdf\text_to_pdf.py", "Python", 96, 0, 0, 0, 18, 29, 143
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\transcription\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\src\transcription\transcribe_audio.py", "Python", 57, 0, 0, 0, 0, 16, 73
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\__init__.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\conftest.py", "Python", 4, 0, 0, 0, 1, 1, 6
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\test_audio_extraction.py", "Python", 15, 0, 0, 0, 2, 7, 24
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\test_summarization.py", "Python", 0, 0, 0, 0, 0, 1, 1
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\test_text_to_pdf.py", "Python", 92, 0, 0, 0, 17, 25, 134
+"c:\Users\esanchezb\Documents\Project_cafe_v2\tests\test_transcription.py", "Python", 97, 0, 0, 0, 20, 23, 140
+"Total", "-", 629, 334, 87, 97, 109, 209, 1465
