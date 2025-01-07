@@ -26,6 +26,7 @@ share/python-wheels/
 MANIFEST
 
 # Environments
+text_to_speech_credential.json
 .env
 .venv
 env/
@@ -33,7 +34,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-text_to_speech_credential.json
+
 
 # Test files
 tests/
