@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 
 # Load OpenAI API key from Config
 openai_api_key = Config.OPENAI_API_KEY
-print("======================ERROR1==========================")
 openai_client = OpenAI(api_key=openai_api_key)
-print("======================ERROR===========================")
 
 # Set Google Cloud Credentials from Config
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = Config.GOOGLE_APPLICATION_CREDENTIALS
@@ -22,7 +20,7 @@ os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = Config.GOOGLE_APPLICATION_CREDENT
 # Define constants
 GOOGLE_VOICE = 'es-US-Polyglot-1'
 MAX_CHARACTERS = 4096  # Character limit per request
-DEFAULT_GPT_TEMPERATURE = 0.4  # Default temperature for GPT model
+DEFAULT_GPT_TEMPERATURE = 0.5  # Default temperature for GPT model
 
 def split_text(text, max_length=MAX_CHARACTERS):
     """Split text into chunks of max_length characters."""
@@ -128,14 +126,13 @@ ESTILO DE NARRACIÓN:
 - Conecta las ideas de forma natural, como en una conversación fluida
 
 ESTRUCTURA:
-- Comienza con un gancho interesante o una pregunta provocadora relacionada con el tema
+- Comienza con un pequeño resumen de la estructura general de la clase
 - Presenta las ideas principales de forma gradual y conectada
-- Usa analogías y ejemplos de la vida cotidiana para explicar conceptos complejos
-- Incluye micro-pausas naturales entre ideas importantes
-- Mantén cada segmento entre 2-3 minutos para facilitar la atención
+- Usa analogías y ejemplos para explicar conceptos complejos
+- Incluye signos de puntuacion naturales entre ideas importantes
 
 CARACTERÍSTICAS CLAVE:
-- Frases cortas y directas que sean fáciles de procesar mientras se conduce
+- Frases cortas y directas
 - Repetición estratégica de puntos clave de forma natural
 - Transiciones suaves y conversacionales entre ideas
 - Ritmo pausado que permita la absorción de información
@@ -146,12 +143,12 @@ EVITAR:
 - Estructuras gramaticales complejas
 - Referencias a elementos visuales o que requieran atención visual
 - Listas largas o enumeraciones extensas
-- Datos específicos difíciles de recordar
+- repeticion de oraciones o frases
 
 El contenido a transformar es el siguiente:
 {}
 
-Recuerda: La persona que escucha está conduciendo. Necesita poder seguir el hilo sin esfuerzo y sin perder la concentración en la carretera.
+Recuerda: La persona necesita poder seguir el hilo sin esfuerzo y sin perder la concentración.
 """
     try:
         summary_parts = split_text(summary)
