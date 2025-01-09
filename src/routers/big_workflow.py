@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from database import get_db
+from src.database import get_db
 from pydantic import BaseModel
-from services.big_workflow_service import orchestrate_big_workflow
+from src.services.big_workflow_service import orchestrate_big_workflow
 from typing import List
-from celery_tasks.tasks import big_workflow_task
+from src.celery_tasks.tasks import big_workflow_task
 
 router = APIRouter()
 

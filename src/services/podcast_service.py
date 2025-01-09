@@ -2,12 +2,12 @@
 
 from pathlib import Path
 from datetime import datetime
-from text_to_audio.text_to_audio import (
+from src.text_to_audio.text_to_audio import (
     generate_podcast_script,
     text_to_speech_google
 )
 import os
-from config import Config
+from src.config import Config
 
 def generate_podcast(
     summary_text: str = None,

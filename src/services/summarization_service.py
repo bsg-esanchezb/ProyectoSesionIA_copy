@@ -1,6 +1,6 @@
 from pathlib import Path
-from summarization.summarization import Summarizer
-from config import Config
+from src.summarization.summarization import Summarizer
+from src.config import Config
 
 def summarize_transcription(transcription_file: str, output_dir: str = None) -> tuple[str, str]:
     """

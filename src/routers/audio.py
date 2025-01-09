@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.audio_service import extract_audio
-from config import Config
+from src.services.audio_service import extract_audio
+from src.config import Config
 
 router = APIRouter()
 

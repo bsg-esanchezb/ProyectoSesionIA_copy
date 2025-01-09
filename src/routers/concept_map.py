@@ -2,7 +2,7 @@ import subprocess
 from fastapi import APIRouter, HTTPException
 from pathlib import Path
 from pydantic import BaseModel
-from services.concept_map_service import generate_concept_map_file
+from src.services.concept_map_service import generate_concept_map_file
 
 router = APIRouter()
 

@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from pathlib import Path
-from services.transcription_service import transcribe_audio_file
-from config import Config  # Import the Config class
+from src.services.transcription_service import transcribe_audio_file
+from src.config import Config  # Import the Config class
 
 router = APIRouter()
 

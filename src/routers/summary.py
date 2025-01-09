@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.summarization_service import summarize_transcription as summarize_transcription_service
+from src.services.summarization_service import summarize_transcription as summarize_transcription_service
 
 router = APIRouter()
 

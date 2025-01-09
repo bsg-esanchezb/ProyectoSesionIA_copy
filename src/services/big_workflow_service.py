@@ -1,6 +1,6 @@
 # src/services/big_workflow_service.py
 
-from repositories.procesamiento_repository import (
+from src.repositories.procesamiento_repository import (
     create_sesion_online,
     update_video_state,
     update_audio_extraction,
@@ -9,15 +9,15 @@ from repositories.procesamiento_repository import (
     insert_tipo_generar,
     update_tipo_generar
 )
-from database import SessionLocal
-from config import Config
-from services.video_service import download_video
-from services.audio_service import extract_audio
-from services.transcription_service import transcribe_audio_file
-from services.summarization_service import summarize_transcription
-from services.study_guide_service import generate_study_guide_pdf
-from services.concept_map_service import generate_concept_map_file
-from services.podcast_service import generate_podcast
+from src.database import SessionLocal
+from src.config import Config
+from src.services.video_service import download_video
+from src.services.audio_service import extract_audio
+from src.services.transcription_service import transcribe_audio_file
+from src.services.summarization_service import summarize_transcription
+from src.services.study_guide_service import generate_study_guide_pdf
+from src.services.concept_map_service import generate_concept_map_file
+from src.services.podcast_service import generate_podcast
 
 def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     """

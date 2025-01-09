@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load .env variables
+# Load environment variables
 BASE_DIR = Path(__file__).resolve().parent.parent  # Project root directory
 ENV_FILE = BASE_DIR / '.env'
 if ENV_FILE.exists():
@@ -12,7 +12,8 @@ class Config:
     # Secrets / Tokens
     VIMEO_ACCESS_TOKEN = os.getenv("VIMEO_ACCESS_TOKEN", "")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
-    
+    GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+
     # Database and Celery
     DATABASE_URL = os.getenv("DATABASE_URL", "")
     CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "")

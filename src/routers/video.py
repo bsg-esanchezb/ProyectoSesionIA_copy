@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 import os
 from dotenv import load_dotenv
-from services.video_service import download_video  # Import from services now
+from src.services.video_service import download_video  # Import from services now
 
 load_dotenv()
 router = APIRouter()

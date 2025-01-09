@@ -1,6 +1,6 @@
 from celery import shared_task
-from services.big_workflow_service import orchestrate_big_workflow
-from database import SessionLocal
+from src.services.big_workflow_service import orchestrate_big_workflow
+from src.database import SessionLocal
 
 @shared_task(name="celery_tasks.tasks.big_workflow_task")
 def big_workflow_task(data: dict) -> dict:

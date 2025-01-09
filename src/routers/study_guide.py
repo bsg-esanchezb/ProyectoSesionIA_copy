@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.study_guide_service import generate_study_guide_pdf
+from src.services.study_guide_service import generate_study_guide_pdf
 
 router = APIRouter()
 

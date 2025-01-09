@@ -1,7 +1,7 @@
-from transcription.transcribe_audio import transcribe_audio
+from src.transcription.transcribe_audio import transcribe_audio
 from pathlib import Path
 import os
-from config import Config
+from src.config import Config
 
 def transcribe_audio_file(
     audio_file_path: str,

@@ -1,4 +1,4 @@
-from download_video.download_video import download_vimeo_video
+from src.download_video.download_video import download_vimeo_video
 
 def download_video(vimeo_url: str, download_directory: str, access_token: str) -> str:
     """Downloads a video from Vimeo and returns the file path.

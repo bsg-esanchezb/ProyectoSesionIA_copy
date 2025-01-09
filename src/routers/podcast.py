@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.podcast_service import generate_podcast
+from src.services.podcast_service import generate_podcast
 from pathlib import Path
 
 router = APIRouter()

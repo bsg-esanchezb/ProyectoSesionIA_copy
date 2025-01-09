@@ -2,8 +2,8 @@
 
 from pathlib import Path
 from datetime import datetime
-from text_to_pdf.text_to_pdf import StudyGuideGenerator
-from config import Config
+from src.text_to_pdf.text_to_pdf import StudyGuideGenerator
+from src.config import Config
 
 def generate_study_guide_pdf(
     summary_text: str = None,

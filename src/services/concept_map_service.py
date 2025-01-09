@@ -3,14 +3,14 @@
 from pathlib import Path
 import subprocess
 from datetime import datetime
-from text_to_concept_map.text_to_concept_map import (
+from src.text_to_concept_map.text_to_concept_map import (
     extract_concept_map_elements,
     generate_mermaid_code_from_elements,
     save_to_file,
     set_png_dpi
 )
 import os
-from config import Config
+from src.config import Config
 
 def generate_concept_map_file(
     summary_text: str = None,

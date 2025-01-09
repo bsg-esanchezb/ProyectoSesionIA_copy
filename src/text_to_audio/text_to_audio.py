@@ -1,21 +1,23 @@
 from pathlib import Path
 from openai import OpenAI
 from google.cloud import texttospeech
-from dotenv import load_dotenv
 from pydub import AudioSegment
 import os
 import logging
+from src.config import Config  # Importing the config class
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Load environment variables
-load_dotenv()
-openai_api_key = os.getenv('OPENAI_API_KEY')
+# Load OpenAI API key from Config
+openai_api_key = Config.OPENAI_API_KEY
+print("======================ERROR1==========================")
 openai_client = OpenAI(api_key=openai_api_key)
-google_credentials_path = r'C:\Users\esanchezb\Documents\Project_cafe_v2\text_to_speech_credential.json'
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = google_credentials_path
+print("======================ERROR===========================")
+
+# Set Google Cloud Credentials from Config
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = Config.GOOGLE_APPLICATION_CREDENTIALS
 
 # Define constants
 GOOGLE_VOICE = 'es-US-Polyglot-1'

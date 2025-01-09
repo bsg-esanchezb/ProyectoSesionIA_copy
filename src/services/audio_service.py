@@ -1,6 +1,6 @@
-from audio_extraction.extract_audio import extract_audio_from_video, AudioExtractionError
+from src.audio_extraction.extract_audio import extract_audio_from_video, AudioExtractionError
 import os
-from config import Config
+from src.config import Config
 
 def extract_audio(video_path: str, output_directory: str = None) -> str:
     """
