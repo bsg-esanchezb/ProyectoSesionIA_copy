@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from routers import video, audio, transcription, summary, study_guide, podcast, concept_map, big_workflow
+from src.routers import video, audio, transcription, summary, study_guide, podcast, concept_map, big_workflow
 
 app = FastAPI(
     title="Video and Audio Processing API",
