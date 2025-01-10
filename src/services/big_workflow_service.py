@@ -32,9 +32,11 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     """
 
     # 1) Insert main record
+    print("1) Insert main record")
     sesion_id = create_sesion_online(db, data)
 
     # 2) Download video
+    print("2) Download video")
     try:
         video_path = download_video(
             vimeo_url=data["UrlVideo"],
@@ -47,6 +49,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Download video failed: {str(e)}")
 
     # 3) Extract audio
+    print("3) Extract audio")
     try:
         audio_path = extract_audio(video_path)
         update_audio_extraction(db, sesion_id, success=True, audio_path=audio_path)
@@ -55,6 +58,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Audio extraction failed: {str(e)}")
 
     # 4) Transcription
+    print("4) Transcription")
     try:
         transcript_text, transcript_file_path = transcribe_audio_file(str(audio_path))
         update_transcription(db, sesion_id, success=True, transcript_text=transcript_text)
@@ -63,6 +67,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Transcription failed: {str(e)}")
 
     # 5) Summarize
+    print("5) Summarize")
     try:
         summary_text, summary_file_path = summarize_transcription(transcript_file_path)
         update_summarization(db, sesion_id, success=True, summary_text=summary_text)
@@ -71,6 +76,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Summarization failed: {str(e)}")
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
+    print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
     tipo_programa = data.get("TipoPrograma", [])
     tipos_mapping = {1: "PDF", 2: "ConceptMap", 3: "Podcast"}
     artifact_ids = {}
@@ -83,6 +89,8 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
 
     # 7) Generate final artifacts (using timestamp-based filenames inside each service)
     # PDF
+    print("7) Generate final artifacts (using timestamp-based filenames inside each service)")
+    print("PDF")
     if "PDF" in artifact_ids:
         pdf_id = artifact_ids["PDF"]
         try:
@@ -93,6 +101,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             raise e
 
     # Concept Map
+    print("Concept Map")
     if "ConceptMap" in artifact_ids:
         cm_id = artifact_ids["ConceptMap"]
         try:
@@ -103,6 +112,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             raise e
 
     # Podcast
+    print("Podcast")
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]
         try:

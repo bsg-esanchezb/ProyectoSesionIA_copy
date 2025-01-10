@@ -8,7 +8,9 @@ def big_workflow_task(data: dict) -> dict:
     Celery task to run the big workflow asynchronously.
     Returns a dict with any useful info, e.g. session ID.
     """
+    print("before create a fresh DB session for Celery")
     db = SessionLocal()  # create a fresh DB session for Celery
+    print("after create a fresh DB session for Celery")
     try:
         result = orchestrate_big_workflow(data, db)
         return result
