@@ -7,6 +7,9 @@ import glob
 from pathlib import Path
 from dotenv import load_dotenv
 
+# For explicitly setting ffmpeg/ffprobe paths
+from shutil import which
+
 # Load environment variables
 load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
@@ -44,6 +47,12 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
     Returns:
         str: The complete transcription text
     """
+    # Debug / explicit ffmpeg and ffprobe path assignment:
+    AudioSegment.ffmpeg = which("ffmpeg")
+    AudioSegment.ffprobe = which("ffprobe")
+    print(f"[DEBUG] ffmpeg path: {AudioSegment.ffmpeg}")
+    print(f"[DEBUG] ffprobe path: {AudioSegment.ffprobe}")
+
     print("validando el archivo mp3")
     validate_mp3_file(audio_file_path)
     os.makedirs(temp_chunks_path, exist_ok=True)
@@ -52,6 +61,7 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
 
     try:
         print(f"Loading MP3 file: {audio_file_path}")
+        # This will fail if ffmpeg/ffprobe are not found
         audio = AudioSegment.from_mp3(audio_file_path)
         
         chunk_length_ms = 60 * 1000
