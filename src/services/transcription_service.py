@@ -27,12 +27,14 @@ def transcribe_audio_file(
     temp_chunks_directory = temp_chunks_directory or Config.TEMP_CHUNKS_DIR
 
     try:
+        print("antes de verificar la creacion de los directorios")
         os.makedirs(output_directory, exist_ok=True)
         os.makedirs(temp_chunks_directory, exist_ok=True)
-        
+        print("antes de declarar las direcciones del audio path")
         audio_path = Path(audio_file_path)
+        print("antes de declarar las direcciones del output path")
         output_path = Path(output_directory) / f"{audio_path.stem}_transcription.txt"
-        
+
         transcription_text = transcribe_audio(
             audio_file_path=str(audio_path),
             output_transcription_path=str(output_path),

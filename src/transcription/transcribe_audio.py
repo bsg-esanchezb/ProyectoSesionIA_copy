@@ -44,6 +44,7 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
     Returns:
         str: The complete transcription text
     """
+    print("validando el archivo mp3")
     validate_mp3_file(audio_file_path)
     os.makedirs(temp_chunks_path, exist_ok=True)
     cleanup_temp_files(temp_chunks_path)
