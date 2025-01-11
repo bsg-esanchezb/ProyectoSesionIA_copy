@@ -34,7 +34,8 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
+.sqlite3
+*.sqlite3*
 
 # Test files
 tests/

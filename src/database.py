@@ -12,7 +12,7 @@ engine = create_engine(DATABASE_URL, echo=False)
 print("Create a session factory")
 # Create a session factory
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-print("Create a session factory")
+print("Ejecuta get_db funcion")
 def get_db():
     """
     Dependency that provides a database session.
