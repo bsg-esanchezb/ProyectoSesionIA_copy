@@ -3,6 +3,14 @@ from pathlib import Path
 import os
 from src.config import Config
 
+# 1. Add these imports and set the ffmpeg/ffprobe paths:
+from pydub import AudioSegment
+from shutil import which
+
+AudioSegment.ffmpeg = which("ffmpeg")
+AudioSegment.ffprobe = which("ffprobe")
+
+
 def transcribe_audio_file(
     audio_file_path: str,
     output_directory: str = None,
@@ -30,8 +38,10 @@ def transcribe_audio_file(
         print("antes de verificar la creacion de los directorios")
         os.makedirs(output_directory, exist_ok=True)
         os.makedirs(temp_chunks_directory, exist_ok=True)
+        
         print("antes de declarar las direcciones del audio path")
         audio_path = Path(audio_file_path)
+        
         print("antes de declarar las direcciones del output path")
         output_path = Path(output_directory) / f"{audio_path.stem}_transcription.txt"
 
