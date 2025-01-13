@@ -11,9 +11,9 @@ from dotenv import load_dotenv
 load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Hardcode the ffmpeg and ffprobe paths
-AudioSegment.ffmpeg = "/usr/bin/ffmpeg"
-AudioSegment.ffprobe = "/usr/bin/ffprobe"
+# Load ffmpeg and ffprobe paths from .env
+AudioSegment.ffmpeg = os.getenv('FFMPEG_PATH', '/usr/bin/ffmpeg')
+AudioSegment.ffprobe = os.getenv('FFPROBE_PATH', '/usr/bin/ffprobe')
 
 def cleanup_temp_files(temp_chunks_path):
     """Clean up temporary WAV chunks"""
