@@ -4,6 +4,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from pathlib import Path
 from PIL import Image
+from src.config import Config
 
 # Load environment variables
 load_dotenv()
@@ -143,12 +144,13 @@ def generate_concept_map(summary_path: Path, output_dir: Path) -> Path:
         # Generate PNG using mermaid-cli
         print(f"Generating high-resolution PNG: {output_png_path}")
         command_png = [
-            r"C:\Users\esanchezb\AppData\Roaming\npm\mmdc.cmd",
+            Config.MERMAID_CLI_PATH,
             "-i", str(temp_mmd_path),
             "-o", str(output_png_path),
             "-s", "4",  # Scale factor for resolution
             "-t", "default",
             "-b", "transparent"
+            "--no-sandbox"
         ]
         
         print("Running command:", command_png)
@@ -203,12 +205,13 @@ def generate_concept_map_from_text(summary_text: str, output_dir: Path) -> Path:
         # Generate PNG using mermaid-cli
         print(f"Generating high-resolution PNG: {output_png_path}")
         command_png = [
-            r"C:\Users\esanchezb\AppData\Roaming\npm\mmdc.cmd",
+            Config.MERMAID_CLI_PATH,
             "-i", str(temp_mmd_path),
             "-o", str(output_png_path),
             "-s", "4",
             "-t", "default",
             "-b", "transparent"
+            "--no-sandbox"
         ]
 
         print("Running command:", command_png)

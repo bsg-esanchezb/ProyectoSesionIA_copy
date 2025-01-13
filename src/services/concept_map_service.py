@@ -52,6 +52,7 @@ def generate_concept_map_file(
             "-s", "4",
             "-t", "default",
             "-b", "transparent"
+            "--no-sandbox"
         ]
         subprocess.run(command_png, check=True)
 
