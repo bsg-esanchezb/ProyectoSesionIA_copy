@@ -12,22 +12,21 @@ from shutil import which
 load_dotenv()
 openai.api_key = os.getenv('OPENAI_API_KEY')
 
-# Dynamically detect ffmpeg and ffprobe paths
+# Dynamically detect ffmpeg and ffprobe paths with a fallback to .env
 def set_ffmpeg_paths():
-    ffmpeg_path = which("ffmpeg")
-    ffprobe_path = which("ffprobe")
+    ffmpeg_path = os.getenv('FFMPEG_PATH') or which("ffmpeg")
+    ffprobe_path = os.getenv('FFPROBE_PATH') or which("ffprobe")
 
     if not ffmpeg_path or not ffprobe_path:
-        raise FileNotFoundError("ffmpeg or ffprobe not found. Please install them.")
-
+        raise FileNotFoundError("ffmpeg or ffprobe not found. Ensure they are installed and correctly set.")
+    
     AudioSegment.ffmpeg = ffmpeg_path
     AudioSegment.ffprobe = ffprobe_path
     print(f"[DEBUG] ffmpeg path set to: {ffmpeg_path}")
     print(f"[DEBUG] ffprobe path set to: {ffprobe_path}")
 
-# Call this once to set paths globally
+# Call once to set paths globally
 set_ffmpeg_paths()
-
 
 def cleanup_temp_files(temp_chunks_path):
     """Clean up temporary WAV chunks"""
@@ -65,7 +64,7 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
     print(f"[DEBUG] Using ffmpeg path: {AudioSegment.ffmpeg}")
     print(f"[DEBUG] Using ffprobe path: {AudioSegment.ffprobe}")
 
-    print("Validando el archivo MP3...")
+    print("validando el archivo mp3")
     validate_mp3_file(audio_file_path)
     os.makedirs(temp_chunks_path, exist_ok=True)
     cleanup_temp_files(temp_chunks_path)
