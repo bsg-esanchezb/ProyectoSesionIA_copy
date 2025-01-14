@@ -51,8 +51,7 @@ def generate_concept_map_file(
             "-o", str(output_png_path),
             "-s", "4",
             "-t", "default",
-            "-b", "transparent",
-            "--no-sandbox"
+            "-b", "transparent"
         ]
         subprocess.run(command_png, check=True)
 

@@ -149,8 +149,7 @@ def generate_concept_map(summary_path: Path, output_dir: Path) -> Path:
             "-o", str(output_png_path),
             "-s", "4",  # Scale factor for resolution
             "-t", "default",
-            "-b", "transparent",
-            "--no-sandbox"
+            "-b", "transparent"
         ]
         
         print("Running command:", command_png)
@@ -210,8 +209,7 @@ def generate_concept_map_from_text(summary_text: str, output_dir: Path) -> Path:
             "-o", str(output_png_path),
             "-s", "4",
             "-t", "default",
-            "-b", "transparent",
-            "--no-sandbox"
+            "-b", "transparent"
         ]
 
         print("Running command:", command_png)
