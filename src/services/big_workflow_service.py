@@ -1,6 +1,5 @@
 # src/services/big_workflow_service.py
 
-import gc
 from src.repositories.procesamiento_repository import (
     create_sesion_online,
     update_video_state,
@@ -49,10 +48,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         update_video_state(db, sesion_id, success=False, ruta=None)
         raise Exception(f"Download video failed: {str(e)}")
 
-    # Cleanup memory after video processing
-    del video_path
-    gc.collect()
-
     # 3) Extract audio
     print("3) Extract audio")
     try:
@@ -61,10 +56,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     except Exception as e:
         update_audio_extraction(db, sesion_id, success=False, audio_path=None)
         raise Exception(f"Audio extraction failed: {str(e)}")
-
-    # Cleanup memory after audio extraction
-    del audio_path
-    gc.collect()
 
     # 4) Transcription
     print("4) Transcription")
@@ -75,10 +66,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         update_transcription(db, sesion_id, success=False, transcript_text=None)
         raise Exception(f"Transcription failed: {str(e)}")
 
-    # Cleanup memory after transcription
-    del transcript_text, transcript_file_path
-    gc.collect()
-
     # 5) Summarize
     print("5) Summarize")
     try:
@@ -87,10 +74,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     except Exception as e:
         update_summarization(db, sesion_id, success=False, summary_text=None)
         raise Exception(f"Summarization failed: {str(e)}")
-
-    # Cleanup memory after summarization
-    del summary_text, summary_file_path
-    gc.collect()
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
@@ -117,10 +100,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             update_tipo_generar(db, pdf_id, None, realizado=False)
             raise e
 
-    # Cleanup memory after PDF generation
-    del pdf_path
-    gc.collect()
-
     # Concept Map
     print("Concept Map")
     if "ConceptMap" in artifact_ids:
@@ -132,10 +111,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             update_tipo_generar(db, cm_id, None, realizado=False)
             raise e
 
-    # Cleanup memory after Concept Map generation
-    del cm_path
-    gc.collect()
-
     # Podcast
     print("Podcast")
     if "Podcast" in artifact_ids:
@@ -146,9 +121,5 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         except Exception as e:
             update_tipo_generar(db, pod_id, None, realizado=False)
             raise e
-
-    # Cleanup memory after Podcast generation
-    del podcast_result
-    gc.collect()
 
     return {"message": "Workflow completed successfully", "sesion_id": sesion_id}
