@@ -50,7 +50,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Download video failed: {str(e)}")
 
     # Cleanup memory after video processing
-    del video_path
     gc.collect()
 
     # 3) Extract audio
@@ -63,7 +62,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Audio extraction failed: {str(e)}")
 
     # Cleanup memory after audio extraction
-    del audio_path
     gc.collect()
 
     # 4) Transcription
@@ -76,7 +74,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Transcription failed: {str(e)}")
 
     # Cleanup memory after transcription
-    del transcript_text, transcript_file_path
     gc.collect()
 
     # 5) Summarize
@@ -89,7 +86,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         raise Exception(f"Summarization failed: {str(e)}")
 
     # Cleanup memory after summarization
-    del summary_text, summary_file_path
     gc.collect()
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
@@ -118,7 +114,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             raise e
 
     # Cleanup memory after PDF generation
-    del pdf_path
     gc.collect()
 
     # Concept Map
@@ -133,7 +128,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             raise e
 
     # Cleanup memory after Concept Map generation
-    del cm_path
     gc.collect()
 
     # Podcast
@@ -148,7 +142,6 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             raise e
 
     # Cleanup memory after Podcast generation
-    del podcast_result
     gc.collect()
 
     return {"message": "Workflow completed successfully", "sesion_id": sesion_id}
