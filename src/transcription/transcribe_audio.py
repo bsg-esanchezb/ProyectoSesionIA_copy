@@ -75,7 +75,7 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
         # This will fail if ffmpeg/ffprobe are not found
         audio = AudioSegment.from_mp3(audio_file_path)
         
-        chunk_length_ms = 10 * 60 * 1000
+        chunk_length_ms = 5 * 60 * 1000
         chunks = make_chunks(audio, chunk_length_ms)
         total_chunks = len(chunks)
 
