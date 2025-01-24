@@ -5,6 +5,7 @@ from pydub import AudioSegment
 import os
 import logging
 from src.config import Config  # Importing the config class
+import gc
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -75,6 +76,10 @@ def text_to_speech_google(script_text, output_file, audio_format="wav"):
 
             except Exception as e:
                 raise RuntimeError(f"Error processing part {i + 1}: {str(e)}")
+            
+            finally:
+                del response
+                gc.collect()
 
         if temp_files:
             concatenate_audio_files(temp_files, output_file)
@@ -98,10 +103,15 @@ def concatenate_audio_files(input_files, output_file):
         for file in input_files:
             audio = AudioSegment.from_file(file)
             combined += audio
+            del audio
         combined.export(str(output_file), format="wav")
 
     except Exception as e:
         raise RuntimeError(f"Failed to concatenate audio files: {str(e)}")
+    
+    finally:
+        del combined
+        gc.collect()
 
 def generate_podcast_script(summary, temperature=DEFAULT_GPT_TEMPERATURE):
     """

@@ -6,6 +6,7 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from dotenv import load_dotenv
 import re
+import gc
 
 load_dotenv()  # Load environment variables from .env file
 
@@ -113,7 +114,9 @@ This is regular text with *italicized terms* and **bold important phrases**
 
         # Build the PDF
         doc.build(elements)
-
+        del doc
+        gc.collect()
+        
     def create_study_guide(self, summary_path, output_path):
         """Generate a study guide PDF based on the summary file."""
         try:
