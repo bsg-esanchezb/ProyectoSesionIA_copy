@@ -6,7 +6,8 @@ import os
 import glob
 from pathlib import Path
 from dotenv import load_dotenv
-from shutil import which
+from shutil import which   
+import gc 
 
 # Load environment variables
 load_dotenv()
@@ -79,12 +80,14 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
         chunks = make_chunks(audio, chunk_length_ms)
         total_chunks = len(chunks)
 
+        del audio
+
         print(f"Starting transcription of {total_chunks} chunks...")
         for i, chunk in enumerate(tqdm(chunks, desc="Processing chunks"), 1):
             chunk_path = os.path.join(temp_chunks_path, f"temp_chunk_{i}.wav")
             try:
                 chunk.export(chunk_path, format="wav")
-                
+                del chunk
                 file_size = get_file_size(chunk_path)
                 if file_size > 25 * 1024 * 1024:
                     print(f"\nWarning: Chunk {i} is {file_size/1024/1024:.2f}MB, exceeding 25MB limit. Skipping...")
@@ -104,7 +107,8 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
             finally:
                 if os.path.exists(chunk_path):
                     os.remove(chunk_path)
-
+                gc.collect()
+                
         print("\nTranscription completed!")
         
         os.makedirs(os.path.dirname(output_transcription_path), exist_ok=True)
