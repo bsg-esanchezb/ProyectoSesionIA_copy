@@ -2,37 +2,45 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 def create_sesion_online(db: Session, data: dict) -> int:
+    """
+    Inserta en T_ProcesamientoSesionOnline usando el SP sp_insert_sesion_online,
+    ahora con las columnas renombradas:
+      - IdPEspecifico
+      - IdPEspecificoSesion
+      - TipoResumenGrabacionOnline
+      - (Sesion, UrlVideo se mantienen igual)
+    """
     sql = text("""
         EXEC ia.sp_insert_sesion_online 
-            @IdProgramaGeneral = :IdProgramaGeneral,
-            @IdPEspecificoPadre = :IdPEspecificoPadre,
-            @IdPEspecificoHijo = :IdPEspecificoHijo,
-            @TipoPrograma = :TipoPrograma,
+            @IdPEspecifico = :IdPEspecifico,
+            @IdPEspecificoSesion = :IdPEspecificoSesion,
+            @TipoResumenGrabacionOnline = :TipoResumenGrabacionOnline,
             @Sesion = :Sesion,
             @UrlVideo = :UrlVideo
     """)
 
+    # Convertimos el array de ints a string (si viene así):
+    # Antes teníamos "TipoPrograma". Ahora se llama "TipoResumenGrabacionOnline"
+    tipo_resumen_str = data["TipoResumenGrabacionOnline"]
+    if isinstance(tipo_resumen_str, list):
+        tipo_resumen_str = ",".join(map(str, tipo_resumen_str))
+
     params = {
-        "IdProgramaGeneral": data["IdProgramaGeneral"],
-        "IdPEspecificoPadre": data.get("IdPEspecificoPadre"),
-        "IdPEspecificoHijo": data.get("IdPEspecificoHijo"),
-        "TipoPrograma": ",".join(map(str, data["TipoPrograma"]))
-            if isinstance(data["TipoPrograma"], list) else data["TipoPrograma"],
+        "IdPEspecifico": data["IdPEspecifico"],
+        "IdPEspecificoSesion": data.get("IdPEspecificoSesion"),
+        "TipoResumenGrabacionOnline": tipo_resumen_str,
         "Sesion": data["Sesion"],
         "UrlVideo": data["UrlVideo"],
     }
 
-    # Execute the SP
+    # Ejecutamos el SP
     result = db.execute(sql, params)
-
-    # **Fetch the result before committing**:
-    row = result.fetchone()  # row is something like (123,) if your SP does SELECT 123
+    row = result.fetchone()
     db.commit()
 
-    # If your SP returns SELECT SCOPE_IDENTITY() as InsertedID
-    # then row = (InsertedID_value,)
     new_id = row[0] if row else None
     return new_id
+
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
@@ -49,6 +57,7 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     db.execute(sql, params)
     db.commit()
 
+
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
         EXEC ia.sp_update_audio_extraction
@@ -56,15 +65,14 @@ def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_pa
             @SeparacionVideo = :sepVideo,
             @AudioVideo = :audioPath
     """)
-
     params = {
         "id": sesion_id,
         "sepVideo": 1 if success else 0,
         "audioPath": audio_path
     }
-
     db.execute(sql, params)
     db.commit()
+
 
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
@@ -76,10 +84,11 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
     params = {
         "id": sesion_id,
         "transAudio": 1 if success else 0,
-        "texto": transcript_text  # <-- the entire transcript
+        "texto": transcript_text
     }
     db.execute(sql, params)
     db.commit()
+
 
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
@@ -91,26 +100,29 @@ def update_summarization(db: Session, sesion_id: int, success: bool, summary_tex
     params = {
         "id": sesion_id,
         "resumen": 1 if success else 0,
-        "textoResumen": summary_text  # the entire summary
+        "textoResumen": summary_text
     }
     db.execute(sql, params)
     db.commit()
-def insert_tipo_generar(db: Session, sesion_online_id: int, tipo: str) -> int:
+
+
+def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion_online: int) -> int:
     """
-    Insert a row into T_ProcesamientoTipoGenerar for the given tipo.
+    Insert a row into T_ProcesamientoTipoGenerar, 
+    ahora usando la columna IdResumenGrabacionOnline (INT) en vez de 'Tipo' (string).
     Returns the newly inserted Id.
     """
     sql = text("""
         EXEC ia.sp_insert_tipo_generar
             @IdProcesamientoSesionOnline = :sesionId,
-            @Tipo = :tipo
+            @IdResumenGrabacionOnline = :idResumen
     """)
     params = {
         "sesionId": sesion_online_id,
-        "tipo": tipo
+        "idResumen": id_resumen_grabacion_online
     }
     result = db.execute(sql, params)
-    row = result.fetchone()  # e.g. (InsertedTipoGenerarID,)
+    row = result.fetchone()
     db.commit()
     return row[0] if row else None
 
@@ -132,7 +144,8 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
     }
     db.execute(sql, params)
     db.commit()
-    
+
+
 def get_summary_text(db: Session, sesion_id: int) -> str:
     """
     Calls sp_get_summary_text to fetch TextoResumen from T_ProcesamientoSesionOnline.
@@ -143,7 +156,7 @@ def get_summary_text(db: Session, sesion_id: int) -> str:
 
     result = db.execute(sql, params)
     row = result.fetchone()
-    db.commit()  # If the SP doesn't modify anything, commit is optional, but safe
+    db.commit()
 
     if row:
         return row[0]  # The first column is TextoResumen

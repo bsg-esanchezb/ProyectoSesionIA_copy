@@ -9,12 +9,14 @@ from src.celery_tasks.tasks import big_workflow_task
 router = APIRouter()
 
 class BigWorkflowRequest(BaseModel):
-    IdProgramaGeneral: int
-    IdPEspecificoPadre: int | None = None
-    IdPEspecificoHijo: int | None = None
-    TipoPrograma: list[int] = []
+    # Cambiamos nombres de las columnas antiguas a las nuevas:
+    IdPEspecifico: int
+    IdPEspecificoSesion: int | None = None
+    # Antes era TipoPrograma (list[int]) => ahora se llama TipoResumenGrabacionOnline (list[int])
+    TipoResumenGrabacionOnline: List[int] = []
     Sesion: str
     UrlVideo: str
+    # Eliminamos IdPEspecificoHijo porque la columna ya no existe
 
 @router.post("/big-workflow")
 def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db)):
@@ -26,7 +28,7 @@ def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db))
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @router.post("/batch", summary="Run multiple big workflow jobs asynchronously")
 def big_workflow_batch_endpoint(requests: List[BigWorkflowRequest]):
     """
@@ -35,9 +37,7 @@ def big_workflow_batch_endpoint(requests: List[BigWorkflowRequest]):
     """
     task_ids = []
     for req in requests:
-        # Convert pydantic model to dict
         data = req.dict()
-        # Enqueue the Celery task
         result = big_workflow_task.delay(data)
         task_ids.append(result.id)
 

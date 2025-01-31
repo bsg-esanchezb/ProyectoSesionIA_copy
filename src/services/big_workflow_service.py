@@ -1,5 +1,3 @@
-# src/services/big_workflow_service.py
-
 from src.repositories.procesamiento_repository import (
     create_sesion_online,
     update_video_state,
@@ -77,19 +75,24 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
-    tipo_programa = data.get("TipoPrograma", [])
+    tipo_list = data.get("TipoResumenGrabacionOnline", [])  # <-- renombrado
+    # Mapeo local (1 => PDF, 2 => ConceptMap, 3 => Podcast).
+    # Ahora guardaremos en DB con un ID entero (IdResumenGrabacionOnline),
+    # pero la lógica local para generar los archivos sigue usando strings.
     tipos_mapping = {1: "PDF", 2: "ConceptMap", 3: "Podcast"}
     artifact_ids = {}
 
-    for tipo_id in tipo_programa:
-        tipo_str = tipos_mapping.get(tipo_id)
-        if tipo_str:
-            row_id = insert_tipo_generar(db, sesion_id, tipo_str)
-            artifact_ids[tipo_str] = row_id
+    for tipo_id in tipo_list:
+        # Insertamos la relación en T_ProcesamientoTipoGenerar
+        row_id = insert_tipo_generar(db, sesion_id, tipo_id)
+        # Guardamos la relación local para luego actualizar la ruta final
+        tipo_str = tipos_mapping.get(tipo_id, f"Unknown_{tipo_id}")
+        artifact_ids[tipo_str] = row_id
 
-    # 7) Generate final artifacts (using timestamp-based filenames inside each service)
-    # PDF
+    # 7) Generate final artifacts
     print("7) Generate final artifacts (using timestamp-based filenames inside each service)")
+
+    # PDF
     print("PDF")
     if "PDF" in artifact_ids:
         pdf_id = artifact_ids["PDF"]
