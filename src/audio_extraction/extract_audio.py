@@ -36,7 +36,7 @@ def validate_paths(video_path: str, output_path: str) -> tuple[Path, Path]:
 
 def extract_audio_from_video(video_path: str, audio_output_path: str = None) -> str:
     """
-    Extracts audio from video with hardcoded MP3 format and 192k bitrate.
+    Extracts audio from video with hardcoded MP3 format, a lower sample rate, and mono output.
     
     Args:
         video_path (str): Path to input video file
@@ -62,7 +62,16 @@ def extract_audio_from_video(video_path: str, audio_output_path: str = None) -> 
             raise AudioExtractionError("No audio stream found in video file")
 
         print(f"Extracting audio to: {audio_output_path}")
-        video.audio.write_audiofile(str(audio_output_path), bitrate="192k", codec="libmp3lame")
+        
+        # Instruct ffmpeg to use a lower sample rate (e.g., 22050 Hz) and convert audio to mono (-ac 1)
+        # Note: Lowering the sample rate and channel count will reduce the size of the uncompressed PCM data.
+        video.audio.write_audiofile(
+            str(audio_output_path),
+            bitrate="192k",          # The bitrate affects the MP3 compression size.
+            codec="libmp3lame",
+            fps=22050,               # Lower sample rate (default is often 44100 Hz).
+            ffmpeg_params=["-ac", "1"]  # Convert to mono audio.
+        )
         video.close()
         return str(audio_output_path)
     
