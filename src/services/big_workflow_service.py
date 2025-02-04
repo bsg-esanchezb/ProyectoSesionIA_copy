@@ -1,6 +1,7 @@
 from src.repositories.procesamiento_repository import (
     create_sesion_online,
     update_video_state,
+    get_pe_sesion_value,
     update_audio_extraction,
     update_transcription,
     update_summarization,
@@ -16,6 +17,8 @@ from src.services.summarization_service import summarize_transcription
 from src.services.study_guide_service import generate_study_guide_pdf
 from src.services.concept_map_service import generate_concept_map_file
 from src.services.podcast_service import generate_podcast
+from src.services.blob_service import upload_file_to_blob
+import os
 
 def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     """
@@ -72,6 +75,8 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     except Exception as e:
         update_summarization(db, sesion_id, success=False, summary_text=None)
         raise Exception(f"Summarization failed: {str(e)}")
+    
+    pe_sesion_val = get_pe_sesion_value(db, sesion_id)
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
@@ -97,8 +102,13 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     if "PDF" in artifact_ids:
         pdf_id = artifact_ids["PDF"]
         try:
-            pdf_path = generate_study_guide_pdf(summary_text=summary_text)
-            update_tipo_generar(db, pdf_id, pdf_path, realizado=True)
+            pdf_path = generate_study_guide_pdf(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
+            pdf_blob_url = upload_file_to_blob(
+                local_path=pdf_path,
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS  # "PDFs"
+            )
+            update_tipo_generar(db, pdf_id, pdf_blob_url, realizado=True)
+            os.remove(pdf_path)
         except Exception as e:
             update_tipo_generar(db, pdf_id, None, realizado=False)
             raise e
@@ -108,7 +118,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     if "ConceptMap" in artifact_ids:
         cm_id = artifact_ids["ConceptMap"]
         try:
-            cm_path = generate_concept_map_file(summary_text=summary_text)
+            cm_path = generate_concept_map_file(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
             update_tipo_generar(db, cm_id, cm_path, realizado=True)
         except Exception as e:
             update_tipo_generar(db, cm_id, None, realizado=False)
@@ -119,8 +129,14 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]
         try:
-            podcast_result = generate_podcast(summary_text=summary_text)
-            update_tipo_generar(db, pod_id, podcast_result["audio_output"], realizado=True)
+            podcast_result = generate_podcast(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
+            local_audio_path = podcast_result["audio_output"]
+            audio_blob_url = upload_file_to_blob(
+                local_path=local_audio_path,
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_AUDIO
+            )
+            update_tipo_generar(db, pod_id, audio_blob_url, realizado=True)
+            os.remove(local_audio_path)
         except Exception as e:
             update_tipo_generar(db, pod_id, None, realizado=False)
             raise e

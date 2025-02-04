@@ -38,5 +38,10 @@ class Config:
     TEMP_AUDIOS_DIR = TEMP_DIR / 'audios'
     TEMP_CHUNKS_DIR = TEMP_DIR / 'chunks'
 
+    AZURE_BLOB_CONNECTION_STRING = os.getenv("AZURE_BLOB_CONNECTION_STRING", "")
+    AZURE_BLOB_CONTAINER = os.getenv("AZURE_BLOB_CONTAINER", "procesoresumenia")
+    AZURE_BLOB_SUBFOLDER_PDFS = os.getenv("AZURE_BLOB_SUBFOLDER_PDFS", "PDFs")
+    AZURE_BLOB_SUBFOLDER_AUDIO = os.getenv("AZURE_BLOB_SUBFOLDER_AUDIO", "ResumenAudio")
+
     # Mermaid CLI location
     MERMAID_CLI_PATH = os.getenv("MERMAID_CLI_PATH", r"C:\Users\esanchezb\AppData\Roaming\npm\mmdc.cmd")

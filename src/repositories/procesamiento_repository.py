@@ -45,7 +45,7 @@ def create_sesion_online(db: Session, data: dict) -> int:
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
         EXEC ia.sp_update_video_state 
-            @Id = :id,
+            @IdSesionOnline = :id,
             @DescargaExitosa = :descargaExitosa,
             @RutaVideo = :rutaVideo
     """)
@@ -61,7 +61,7 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
         EXEC ia.sp_update_audio_extraction
-            @Id = :id,
+            @IdSesionOnline = :id,
             @SeparacionVideo = :sepVideo,
             @AudioVideo = :audioPath
     """)
@@ -77,7 +77,7 @@ def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_pa
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
         EXEC ia.sp_update_transcription
-            @Id = :id,
+            @IdSesionOnline = :id,
             @TranscripcionAudio = :transAudio,
             @TextoTranscripcion = :texto
     """)
@@ -93,7 +93,7 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
         EXEC ia.sp_update_summarization
-            @Id = :id,
+            @IdSesionOnline = :id,
             @Resumen = :resumen,
             @TextoResumen = :textoResumen
     """)
@@ -133,7 +133,7 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
     """
     sql = text("""
         EXEC ia.sp_update_tipo_generar
-            @Id = :id,
+            @IdTipoGenerar = :id,
             @RegistroUrl = :url,
             @Realizado = :done
     """)
@@ -161,3 +161,16 @@ def get_summary_text(db: Session, sesion_id: int) -> str:
     if row:
         return row[0]  # The first column is TextoResumen
     return None
+
+def get_pe_sesion_value(db: Session, sesion_id: int) -> int | None:
+    """
+    Devuelve el valor de IdPEspecificoSesion para un registro en T_ProcesamientoSesionOnline.
+    """
+    sql = text("""
+        SELECT IdPEspecificoSesion
+        FROM [ia].[T_ProcesamientoSesionOnline]
+        WHERE Id = :id
+    """)
+    result = db.execute(sql, {"id": sesion_id})
+    row = result.fetchone()
+    return row[0] if row else None

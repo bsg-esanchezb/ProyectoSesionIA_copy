@@ -126,7 +126,7 @@ def generate_podcast_script(summary, temperature=DEFAULT_GPT_TEMPERATURE):
     logger.info(f"Generating podcast script with temperature: {temperature}")
     
     prompt_template = """
-Eres un narrador experto especializado en crear contenido educativo que sea fácil de seguir mientras se conduce. Tu objetivo es transformar el resumen de clase proporcionado en una narración cautivadora en español, diseñada específicamente para ser escuchada durante trayectos en coche.
+Eres un narrador experto especializado en crear contenido educativo que sea fácil de seguir. Tu objetivo es transformar el resumen de clase proporcionado en una narración entretenida en español, diseñada específicamente para ser escuchada y reforzar los conocimientos de la clase.
 
 ESTILO DE NARRACIÓN:
 - Usa un tono conversacional y amigable, como si estuvieras hablando con un amigo inteligente

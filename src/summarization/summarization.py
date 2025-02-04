@@ -82,14 +82,14 @@ Output must be only the summary following the instructions, do not include anyth
 {transcription}
 """
 
-    def analyze_transcription(self, transcription_file: str, output_file: str, model: str = "gpt-4o-mini", temperature: float = 0.0, max_tokens: int = 16384) -> str:
+    def analyze_transcription(self, transcription_file: str, output_file: str, model: str = "gpt-4o", temperature: float = 0.0, max_tokens: int = 16384) -> str:
         """
         Analyze transcription and generate structured summary.
         
         Args:
             transcription_file (str): Path to transcription file
             output_file (str): Path to save the summary
-            model (str): OpenAI model to use (default is GPT-4)
+            model (str): OpenAI model to use (default is GPT-4o)
             temperature (float): Temperature for generation
             max_tokens (int): Maximum tokens for generation
             
