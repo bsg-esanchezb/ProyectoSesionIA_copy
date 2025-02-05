@@ -7,23 +7,23 @@ from src.database import SessionLocal
 def big_workflow_task(data: dict) -> dict:
     """
     Celery task to run the big workflow asynchronously.
-    Inserts the main record to obtain a session ID and then passes it along with
-    the provided data to the orchestrator.
-    Returns a dict with useful info, e.g., the session ID.
+    Receives data with 'sesion_id' already created by the endpoint.
+    Calls orchestrate_big_workflow for further processing.
     """
     print("before creating a fresh DB session for Celery")
-    db = SessionLocal()  # Create a fresh DB session for Celery
+    db = SessionLocal()
     print("after creating a fresh DB session for Celery")
+
     try:
-        # Insert the main record immediately and obtain the session ID.
-        sesion_id = create_sesion_online(db, data)
-        # Optionally, add the session ID to the data dictionary if needed downstream.
-        data["sesion_id"] = sesion_id
-        # Now call the orchestrator with the pre-inserted session ID.
+        # Recupera el sesion_id, NO insertes nada
+        sesion_id = data["sesion_id"]
+
+        # Llama al orquestador
         result = orchestrate_big_workflow(sesion_id, data, db)
         return result
+
     except Exception as e:
-        # Log or handle errors as needed
         raise e
     finally:
         db.close()
+

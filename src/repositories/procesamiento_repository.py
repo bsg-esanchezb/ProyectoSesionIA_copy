@@ -3,44 +3,61 @@ from sqlalchemy import text
 
 def create_sesion_online(db: Session, data: dict) -> int:
     """
-    Inserta en T_ProcesamientoSesionOnline usando el SP sp_insert_sesion_online,
-    ahora con las columnas renombradas:
-      - IdPEspecifico
-      - IdPEspecificoSesion
-      - TipoResumenGrabacionOnline
-      - (Sesion, UrlVideo se mantienen igual)
+    Insert into T_ProcesamientoSesionOnline if not exists,
+    or return existing Id if (IdPEspecifico, IdPEspecificoSesion, UrlVideo)
+    is already in DB.
     """
-    sql = text("""
-        EXEC ia.sp_insert_sesion_online 
-            @IdPEspecifico = :IdPEspecifico,
-            @IdPEspecificoSesion = :IdPEspecificoSesion,
-            @TipoResumenGrabacionOnline = :TipoResumenGrabacionOnline,
-            @Sesion = :Sesion,
-            @UrlVideo = :UrlVideo
+    # 1) Verificación previa
+    sql_check = text("""
+        SELECT TOP 1 Id
+        FROM [ia].[T_ProcesamientoSesionOnline]
+        WHERE IdPEspecifico = :idEsp
+          AND IdPEspecificoSesion = :idEspSes
+          AND UrlVideo = :urlVid
     """)
-
-    # Convertimos el array de ints a string (si viene así):
-    # Antes teníamos "TipoPrograma". Ahora se llama "TipoResumenGrabacionOnline"
-    tipo_resumen_str = data["TipoResumenGrabacionOnline"]
-    if isinstance(tipo_resumen_str, list):
-        tipo_resumen_str = ",".join(map(str, tipo_resumen_str))
-
-    params = {
-        "IdPEspecifico": data["IdPEspecifico"],
-        "IdPEspecificoSesion": data.get("IdPEspecificoSesion"),
-        "TipoResumenGrabacionOnline": tipo_resumen_str,
-        "Sesion": data["Sesion"],
-        "UrlVideo": data["UrlVideo"],
+    params_check = {
+        "idEsp": data["IdPEspecifico"],
+        "idEspSes": data.get("IdPEspecificoSesion"),
+        "urlVid": data["UrlVideo"]
     }
+    row_check = db.execute(sql_check, params_check).fetchone()
+    if row_check:
+        existing_id = row_check[0]
+        db.commit()  # o db.rollback(), si prefieres
+        return existing_id
 
-    # Ejecutamos el SP
-    result = db.execute(sql, params)
-    row = result.fetchone()
+    # 2) Convertir TipoResumenGrabacionOnline a string
+    tipo_resumen_value = data.get("TipoResumenGrabacionOnline", "")
+    if isinstance(tipo_resumen_value, list):
+        # Convierto la lista [1, 3] en algo como "1,3" (sin espacios).
+        # O "1, 3" si te acomoda. Solo asegúrate que sea un string válido para tu SP.
+        tipo_resumen_str = ",".join(str(x) for x in tipo_resumen_value)
+    else:
+        # Si ya viene como string, lo tomas tal cual
+        tipo_resumen_str = str(tipo_resumen_value)
+
+    # 3) Insertar (vía SP)
+    sql_insert = text("""
+        EXEC ia.sp_insert_sesion_online
+            @IdPEspecifico               = :idEsp,
+            @IdPEspecificoSesion         = :idEspSes,
+            @TipoResumenGrabacionOnline  = :tipoRes,
+            @Sesion                      = :sesion,
+            @UrlVideo                    = :urlVid
+    """)
+    params_insert = {
+        "idEsp": data["IdPEspecifico"],
+        "idEspSes": data.get("IdPEspecificoSesion"),
+        "tipoRes": tipo_resumen_str,   # <--- Usar la variable convertida
+        "sesion": data["Sesion"],
+        "urlVid": data["UrlVideo"]
+    }
+    result_insert = db.execute(sql_insert, params_insert)
+    row_insert = result_insert.fetchone()
     db.commit()
 
-    new_id = row[0] if row else None
+    new_id = row_insert[0] if row_insert else None
     return new_id
-
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""

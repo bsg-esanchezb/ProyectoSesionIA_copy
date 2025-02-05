@@ -33,21 +33,26 @@ def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db))
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/batch", summary="Run multiple big workflow jobs asynchronously")
-def big_workflow_batch_endpoint(requests: List[BigWorkflowRequest], db: Session = Depends(get_db)):
+def big_workflow_batch_endpoint(
+    requests: List[BigWorkflowRequest],
+    db: Session = Depends(get_db)
+):
     """
     Accepts an array of workflow inputs and queues each one in Celery.
-    For each request, the main record is inserted immediately to obtain a session ID,
-    which is then passed to the Celery task.
     Returns a list of Celery task IDs.
     """
     task_ids = []
+
     for req in requests:
+        # 1) Convierte Pydantic model a dict
         data = req.dict()
-        # Insert the main record immediately and obtain the session ID.
+
+        # 2) Crea (o recupera) la sesión => no más duplicados
         sesion_id = create_sesion_online(db, data)
-        # Optionally add the session ID into the data dictionary for downstream use.
         data["sesion_id"] = sesion_id
-        # Enqueue the Celery task with the updated data.
+
+        # 3) Encola la Celery task con el data ya actualizado
         result = big_workflow_task.delay(data)
         task_ids.append(result.id)
+
     return {"message": "Batch queued", "tasks": task_ids}
