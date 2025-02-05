@@ -1,22 +1,13 @@
 ```
 ProyectoResumenSesionIA
+├─ .gitignore
 ├─ api.py
 ├─ data
 │  ├─ input
-│  │  └─ videos
 │  ├─ output
-│  │  ├─ concept_map
-│  │  ├─ podcast
-│  │  ├─ study_guides
-│  │  ├─ transcriptions
-│  │  └─ videos
+│  │  └─ transcriptions
+│  │     └─ .gitkeep
 │  └─ temp
-│     ├─ audios
-│     ├─ chunks
-│     │  └─ summary
-│     ├─ podcast
-│     ├─ podcast_text
-│     └─ summary
 ├─ README.md
 ├─ requirements.txt
 └─ src
@@ -50,6 +41,7 @@ ProyectoResumenSesionIA
    ├─ services
    │  ├─ audio_service.py
    │  ├─ big_workflow_service.py
+   │  ├─ blob_service.py
    │  ├─ concept_map_service.py
    │  ├─ podcast_service.py
    │  ├─ study_guide_service.py

@@ -7,7 +7,6 @@ from src.repositories.procesamiento_repository import (
     insert_tipo_generar,
     update_tipo_generar
 )
-from src.database import SessionLocal
 from src.config import Config
 from src.services.video_service import download_video
 from src.services.audio_service import extract_audio
@@ -19,10 +18,10 @@ from src.services.podcast_service import generate_podcast
 from src.services.blob_service import upload_file_to_blob
 import os
 
-def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> dict:
+def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
     """
     Orchestrates the entire flow starting from an already created main record.
-    Expects a pre-inserted session ID (sesion_id), and performs:
+    Expects a pre-inserted session ID (sesion_id) and performs:
       1) Video download -> update DB
       2) Audio extraction -> update DB
       3) Transcription -> update DB
@@ -30,7 +29,6 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
       5) Insertion of artifact rows in T_ProcesamientoTipoGenerar
       6) Generation of final artifacts with unique timestamp-based filenames
     """
-    
     # 2) Download video
     print("2) Download video")
     try:
@@ -70,14 +68,14 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
     except Exception as e:
         update_summarization(db, sesion_id, success=False, summary_text=None)
         raise Exception(f"Summarization failed: {str(e)}")
-    
+
+    # Obtain the value for IdPEspecificoSesion from the main record.
     pe_sesion_val = get_pe_sesion_value(db, sesion_id)
 
-    # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
+    # 6) Insert artifact rows (for optional artifacts)
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
     tipo_list = data.get("TipoResumenGrabacionOnline", [])
-    # Local mapping: 1 => PDF, 2 => ConceptMap, 3 => Podcast.
-    # The DB will store an ID (IdResumenGrabacionOnline), but locally we generate filenames as strings.
+    # Mapping: 1 => PDF, 2 => ConceptMap, 3 => Podcast.
     tipos_mapping = {1: "PDF", 2: "ConceptMap", 3: "Podcast"}
     artifact_ids = {}
     for tipo_id in tipo_list:
@@ -88,7 +86,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
     # 7) Generate final artifacts (using timestamp-based filenames)
     print("7) Generate final artifacts (using timestamp-based filenames inside each service)")
 
-    # PDF
+    # PDF Artifact
     print("PDF")
     if "PDF" in artifact_ids:
         pdf_id = artifact_ids["PDF"]
@@ -96,7 +94,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
             pdf_path = generate_study_guide_pdf(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
             pdf_blob_url = upload_file_to_blob(
                 local_path=pdf_path,
-                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS  # e.g., "PDFs"
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS
             )
             update_tipo_generar(db, pdf_id, pdf_blob_url, realizado=True)
             os.remove(pdf_path)
@@ -104,7 +102,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
             update_tipo_generar(db, pdf_id, None, realizado=False)
             raise e
 
-    # Concept Map
+    # Concept Map Artifact
     print("Concept Map")
     if "ConceptMap" in artifact_ids:
         cm_id = artifact_ids["ConceptMap"]
@@ -115,7 +113,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> di
             update_tipo_generar(db, cm_id, None, realizado=False)
             raise e
 
-    # Podcast
+    # Podcast Artifact
     print("Podcast")
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]

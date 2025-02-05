@@ -21,7 +21,7 @@ class BigWorkflowRequest(BaseModel):
 @router.post("/big-workflow")
 def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db)):
     try:
-        # Immediately insert the main record and obtain the session ID.
+        # Insert the main record immediately to obtain the session ID.
         sesion_id = create_sesion_online(db, request.dict())
         # Call the orchestrator with the pre-created session ID.
         result = orchestrate_big_workflow(sesion_id, request.dict(), db)
@@ -43,9 +43,9 @@ def big_workflow_batch_endpoint(requests: List[BigWorkflowRequest], db: Session 
     task_ids = []
     for req in requests:
         data = req.dict()
-        # Insert the main record immediately and get the session ID.
+        # Insert the main record immediately and obtain the session ID.
         sesion_id = create_sesion_online(db, data)
-        # Optionally, add the session ID to the data dictionary for downstream use.
+        # Optionally add the session ID into the data dictionary for downstream use.
         data["sesion_id"] = sesion_id
         # Enqueue the Celery task with the updated data.
         result = big_workflow_task.delay(data)
