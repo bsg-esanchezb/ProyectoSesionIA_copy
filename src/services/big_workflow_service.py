@@ -1,5 +1,4 @@
 from src.repositories.procesamiento_repository import (
-    create_sesion_online,
     update_video_state,
     get_pe_sesion_value,
     update_audio_extraction,
@@ -20,22 +19,18 @@ from src.services.podcast_service import generate_podcast
 from src.services.blob_service import upload_file_to_blob
 import os
 
-def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
+def orchestrate_big_workflow(sesion_id: int, data: dict, db: SessionLocal) -> dict:
     """
-    Orchestrates the entire flow:
-      1) Insert in T_ProcesamientoSesionOnline
-      2) Download video -> update DB
-      3) Extract audio -> update DB
-      4) Transcription -> store in DB
-      5) Summarize -> store in DB
-      6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts (PDF, ConceptMap, Podcast)
-      7) Generate each artifact with a unique timestamp-based filename
+    Orchestrates the entire flow starting from an already created main record.
+    Expects a pre-inserted session ID (sesion_id), and performs:
+      1) Video download -> update DB
+      2) Audio extraction -> update DB
+      3) Transcription -> update DB
+      4) Summarization -> update DB
+      5) Insertion of artifact rows in T_ProcesamientoTipoGenerar
+      6) Generation of final artifacts with unique timestamp-based filenames
     """
-
-    # 1) Insert main record
-    print("1) Insert main record")
-    sesion_id = create_sesion_online(db, data)
-
+    
     # 2) Download video
     print("2) Download video")
     try:
@@ -80,21 +75,17 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
 
     # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
-    tipo_list = data.get("TipoResumenGrabacionOnline", [])  # <-- renombrado
-    # Mapeo local (1 => PDF, 2 => ConceptMap, 3 => Podcast).
-    # Ahora guardaremos en DB con un ID entero (IdResumenGrabacionOnline),
-    # pero la lógica local para generar los archivos sigue usando strings.
+    tipo_list = data.get("TipoResumenGrabacionOnline", [])
+    # Local mapping: 1 => PDF, 2 => ConceptMap, 3 => Podcast.
+    # The DB will store an ID (IdResumenGrabacionOnline), but locally we generate filenames as strings.
     tipos_mapping = {1: "PDF", 2: "ConceptMap", 3: "Podcast"}
     artifact_ids = {}
-
     for tipo_id in tipo_list:
-        # Insertamos la relación en T_ProcesamientoTipoGenerar
         row_id = insert_tipo_generar(db, sesion_id, tipo_id)
-        # Guardamos la relación local para luego actualizar la ruta final
         tipo_str = tipos_mapping.get(tipo_id, f"Unknown_{tipo_id}")
         artifact_ids[tipo_str] = row_id
 
-    # 7) Generate final artifacts
+    # 7) Generate final artifacts (using timestamp-based filenames)
     print("7) Generate final artifacts (using timestamp-based filenames inside each service)")
 
     # PDF
@@ -105,7 +96,7 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
             pdf_path = generate_study_guide_pdf(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
             pdf_blob_url = upload_file_to_blob(
                 local_path=pdf_path,
-                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS  # "PDFs"
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS  # e.g., "PDFs"
             )
             update_tipo_generar(db, pdf_id, pdf_blob_url, realizado=True)
             os.remove(pdf_path)
