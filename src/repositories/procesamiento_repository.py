@@ -38,7 +38,7 @@ def create_sesion_online(db: Session, data: dict) -> int:
 
     # 3) Insertar (vía SP)
     sql_insert = text("""
-        EXEC ia.sp_insert_sesion_online
+        EXEC ia.SP_InsertarSesionEnLinea
             @IdPEspecifico               = :idEsp,
             @IdPEspecificoSesion         = :idEspSes,
             @TipoResumenGrabacionOnline  = :tipoRes,
@@ -61,7 +61,7 @@ def create_sesion_online(db: Session, data: dict) -> int:
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
-        EXEC ia.sp_update_video_state 
+        EXEC ia.SP_ActualizarEstadoVideo
             @IdSesionOnline = :id,
             @DescargaExitosa = :descargaExitosa,
             @RutaVideo = :rutaVideo
@@ -77,7 +77,7 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
 
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
-        EXEC ia.sp_update_audio_extraction
+        EXEC ia.SP_ActualizarExtraccionAudio
             @IdSesionOnline = :id,
             @SeparacionVideo = :sepVideo,
             @AudioVideo = :audioPath
@@ -93,7 +93,7 @@ def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_pa
 
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
-        EXEC ia.sp_update_transcription
+        EXEC ia.SP_ActualizarTranscripcion
             @IdSesionOnline = :id,
             @TranscripcionAudio = :transAudio,
             @TextoTranscripcion = :texto
@@ -109,7 +109,7 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
 
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
-        EXEC ia.sp_update_summarization
+        EXEC ia.SP_ActualizarResumen
             @IdSesionOnline = :id,
             @Resumen = :resumen,
             @TextoResumen = :textoResumen
@@ -130,7 +130,7 @@ def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion
     Returns the newly inserted Id.
     """
     sql = text("""
-        EXEC ia.sp_insert_tipo_generar
+        EXEC ia.SP_InsertarTipoGenerar
             @IdProcesamientoSesionOnline = :sesionId,
             @IdResumenGrabacionOnline = :idResumen
     """)
@@ -149,7 +149,7 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
     Update RegistroUrl and Realizado in T_ProcesamientoTipoGenerar.
     """
     sql = text("""
-        EXEC ia.sp_update_tipo_generar
+        EXEC ia.SP_ActualizarTipoGenerar
             @IdTipoGenerar = :id,
             @RegistroUrl = :url,
             @Realizado = :done
@@ -165,10 +165,10 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
 
 def get_summary_text(db: Session, sesion_id: int) -> str:
     """
-    Calls sp_get_summary_text to fetch TextoResumen from T_ProcesamientoSesionOnline.
+    Calls SP_ObtenerTextoResumen to fetch TextoResumen from T_ProcesamientoSesionOnline.
     Returns the summary text (str) or None if not found.
     """
-    sql = text("EXEC ia.sp_get_summary_text @Id = :id")
+    sql = text("EXEC ia.SP_ObtenerTextoResumen @Id = :id")
     params = {"id": sesion_id}
 
     result = db.execute(sql, params)
