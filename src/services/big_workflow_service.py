@@ -16,6 +16,7 @@ from src.services.study_guide_service import generate_study_guide_pdf
 from src.services.concept_map_service import generate_concept_map_file
 from src.services.podcast_service import generate_podcast
 from src.services.blob_service import upload_file_to_blob
+from src.services.configuration_resumen_service import enviar_resumen
 import os
 
 def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
@@ -114,6 +115,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
             raise e
 
     # Podcast Artifact
+    # Podcast Artifact
     print("Podcast")
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]
@@ -129,5 +131,17 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
         except Exception as e:
             update_tipo_generar(db, pod_id, None, realizado=False)
             raise e
+        
+        id_pepecifico = data.get("IdPEspecifico")
+        resumen_response = None
+        if id_pepecifico:
+            resumen_response = enviar_resumen(id_pepecifico)
+    else:
+        resumen_response = None
 
-    return {"message": "Workflow completed successfully", "sesion_id": sesion_id}
+    return {
+        "message": "Workflow completed successfully",
+        "sesion_id": sesion_id,
+        "resumen_response": resumen_response
+    }
+

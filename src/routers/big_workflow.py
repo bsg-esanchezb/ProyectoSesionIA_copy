@@ -10,13 +10,12 @@ from src.celery_tasks.tasks import big_workflow_task
 router = APIRouter()
 
 class BigWorkflowRequest(BaseModel):
-    # Updated field names according to the new schema
     IdPEspecifico: int
     IdPEspecificoSesion: int | None = None
-    # Previously TipoPrograma, now a list of integers as TipoResumenGrabacionOnline
     TipoResumenGrabacionOnline: List[int] = []
     Sesion: str
     UrlVideo: str
+    Usuario: str
 
 @router.post("/big-workflow")
 def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db)):

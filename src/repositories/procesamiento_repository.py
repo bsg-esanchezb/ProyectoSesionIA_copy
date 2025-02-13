@@ -3,54 +3,41 @@ from sqlalchemy import text
 
 def create_sesion_online(db: Session, data: dict) -> int:
     """
-    Insert into T_ProcesamientoSesionOnline if not exists,
-    or return existing Id if (IdPEspecifico, IdPEspecificoSesion, UrlVideo)
-    is already in DB.
+    Inserts into T_ProcesamientoSesionOnline if not exists,
+    or returns the existing Id if a record with the same
+    IdPEspecificoSesion and UrlVideo already exists.
     """
-    # 1) Verificación previa
+    # 1) Check for existing record (using only fields that still exist)
     sql_check = text("""
         SELECT TOP 1 Id
         FROM [ia].[T_ProcesamientoSesionOnline]
-        WHERE IdPEspecifico = :idEsp
-          AND IdPEspecificoSesion = :idEspSes
+        WHERE IdPEspecificoSesion = :idEspSes
           AND UrlVideo = :urlVid
     """)
     params_check = {
-        "idEsp": data["IdPEspecifico"],
         "idEspSes": data.get("IdPEspecificoSesion"),
         "urlVid": data["UrlVideo"]
     }
     row_check = db.execute(sql_check, params_check).fetchone()
     if row_check:
         existing_id = row_check[0]
-        db.commit()  # o db.rollback(), si prefieres
+        db.commit()
         return existing_id
 
-    # 2) Convertir TipoResumenGrabacionOnline a string
-    tipo_resumen_value = data.get("TipoResumenGrabacionOnline", "")
-    if isinstance(tipo_resumen_value, list):
-        # Convierto la lista [1, 3] en algo como "1,3" (sin espacios).
-        # O "1, 3" si te acomoda. Solo asegúrate que sea un string válido para tu SP.
-        tipo_resumen_str = ",".join(str(x) for x in tipo_resumen_value)
-    else:
-        # Si ya viene como string, lo tomas tal cual
-        tipo_resumen_str = str(tipo_resumen_value)
-
-    # 3) Insertar (vía SP)
+    # 2) Insert the record via SP (note: we no longer send IdPEspecifico or TipoResumenGrabacionOnline)
     sql_insert = text("""
-        EXEC ia.SP_InsertarSesionEnLinea
-            @IdPEspecifico               = :idEsp,
-            @IdPEspecificoSesion         = :idEspSes,
-            @TipoResumenGrabacionOnline  = :tipoRes,
-            @Sesion                      = :sesion,
-            @UrlVideo                    = :urlVid
+        EXEC ia.SP_TProcesamientoSesionOnline_Insertar
+            @IdPEspecificoSesion = :idEspSes,
+            @Sesion = :sesion,
+            @UrlVideo = :urlVid,
+            @UsuarioCreacion = :usuario,
+            @UsuarioModificacion = :usuario
     """)
     params_insert = {
-        "idEsp": data["IdPEspecifico"],
         "idEspSes": data.get("IdPEspecificoSesion"),
-        "tipoRes": tipo_resumen_str,   # <--- Usar la variable convertida
         "sesion": data["Sesion"],
-        "urlVid": data["UrlVideo"]
+        "urlVid": data["UrlVideo"],
+        "usuario": data["Usuario"]  # This field must be present in the request
     }
     result_insert = db.execute(sql_insert, params_insert)
     row_insert = result_insert.fetchone()
@@ -61,8 +48,8 @@ def create_sesion_online(db: Session, data: dict) -> int:
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
-        EXEC ia.SP_ActualizarEstadoVideo
-            @IdSesionOnline = :id,
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarEstadoVideo
+            @Id = :id,
             @DescargaExitosa = :descargaExitosa,
             @RutaVideo = :rutaVideo
     """)
@@ -77,8 +64,8 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
 
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
-        EXEC ia.SP_ActualizarExtraccionAudio
-            @IdSesionOnline = :id,
+        EXEC ia.SP_TProcesamientoTipoGenerar_ActualizarExtraccionAudio
+            @Id = :id,
             @SeparacionVideo = :sepVideo,
             @AudioVideo = :audioPath
     """)
@@ -93,8 +80,8 @@ def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_pa
 
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
-        EXEC ia.SP_ActualizarTranscripcion
-            @IdSesionOnline = :id,
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarTranscripcion
+            @Id = :id,
             @TranscripcionAudio = :transAudio,
             @TextoTranscripcion = :texto
     """)
@@ -109,8 +96,8 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
 
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
-        EXEC ia.SP_ActualizarResumen
-            @IdSesionOnline = :id,
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarResumen
+            @Id = :id,
             @Resumen = :resumen,
             @TextoResumen = :textoResumen
     """)
@@ -130,7 +117,7 @@ def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion
     Returns the newly inserted Id.
     """
     sql = text("""
-        EXEC ia.SP_InsertarTipoGenerar
+        EXEC ia.SP_TProcesamientoTipoGenerar_Insertar
             @IdProcesamientoSesionOnline = :sesionId,
             @IdResumenGrabacionOnline = :idResumen
     """)
@@ -149,8 +136,8 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
     Update RegistroUrl and Realizado in T_ProcesamientoTipoGenerar.
     """
     sql = text("""
-        EXEC ia.SP_ActualizarTipoGenerar
-            @IdTipoGenerar = :id,
+        EXEC ia.SP_TProcesamientoTipoGenerar_ActualizarTipoGenerar
+            @Id = :id,
             @RegistroUrl = :url,
             @Realizado = :done
     """)
