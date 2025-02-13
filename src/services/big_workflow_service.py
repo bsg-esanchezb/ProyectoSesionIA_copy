@@ -132,10 +132,10 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
             update_tipo_generar(db, pod_id, None, realizado=False)
             raise e
         
-        id_pepecifico = data.get("IdPEspecifico")
+        id_pepecifico_sesion = data.get("IdPEspecificoSesion")
         resumen_response = None
-        if id_pepecifico:
-            resumen_response = enviar_resumen(id_pepecifico)
+        if id_pepecifico_sesion:
+            resumen_response = enviar_resumen(id_pepecifico_sesion)
     else:
         resumen_response = None
 
@@ -144,4 +144,3 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
         "sesion_id": sesion_id,
         "resumen_response": resumen_response
     }
-
