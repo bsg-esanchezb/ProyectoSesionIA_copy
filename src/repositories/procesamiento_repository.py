@@ -152,10 +152,10 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
 
 def get_summary_text(db: Session, sesion_id: int) -> str:
     """
-    Calls SP_ObtenerTextoResumen to fetch TextoResumen from T_ProcesamientoSesionOnline.
+    Calls SP_TProcesamientoSesionOnline_ObtenerTextoResumen to fetch TextoResumen from T_ProcesamientoSesionOnline.
     Returns the summary text (str) or None if not found.
     """
-    sql = text("EXEC ia.SP_ObtenerTextoResumen @Id = :id")
+    sql = text("EXEC ia.SP_TProcesamientoSesionOnline_ObtenerTextoResumen @Id = :id")
     params = {"id": sesion_id}
 
     result = db.execute(sql, params)
