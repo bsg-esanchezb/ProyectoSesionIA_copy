@@ -45,8 +45,3 @@ class Config:
 
     # Mermaid CLI location
     MERMAID_CLI_PATH = os.getenv("MERMAID_CLI_PATH", r"C:\Users\esanchezb\AppData\Roaming\npm\mmdc.cmd")
-
-    CONFIGURACION_RESUMENGRABACION_URL = os.getenv(
-    "CONFIGURACION_RESUMENGRABACION_URL", 
-    "https://localhost:7288/api/ConfiguracionResumenGrabacionOnline/EnvioResumenGrabaciones"
-    )
