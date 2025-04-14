@@ -67,7 +67,7 @@ def extract_audio_from_video(video_path: str, audio_output_path: str = None) -> 
         # Note: Lowering the sample rate and channel count will reduce the size of the uncompressed PCM data.
         video.audio.write_audiofile(
             str(audio_output_path),
-            bitrate="192k",          # The bitrate affects the MP3 compression size.
+            bitrate="128k",          # The bitrate affects the MP3 compression size.
             codec="libmp3lame",
             fps=22050,               # Lower sample rate (default is often 44100 Hz).
             ffmpeg_params=["-ac", "1"]  # Convert to mono audio.

@@ -5,14 +5,15 @@ def create_sesion_online(db: Session, data: dict) -> int:
     """
     Inserts into T_ProcesamientoSesionOnline if not exists,
     or returns the existing Id if a record with the same
-    IdPEspecificoSesion and UrlVideo already exists.
+    IdPEspecificoSesion and UrlVideo already exists and is active (Estado = 1).
     """
-    # 1) Check for existing record (using only fields that still exist)
+    # 1) Check for existing active record
     sql_check = text("""
         SELECT TOP 1 Id
         FROM [ia].[T_ProcesamientoSesionOnline]
         WHERE IdPEspecificoSesion = :idEspSes
           AND UrlVideo = :urlVid
+          AND Estado = 1
     """)
     params_check = {
         "idEspSes": data.get("IdPEspecificoSesion"),
@@ -58,9 +59,12 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
         "descargaExitosa": 1 if success else 0,
         "rutaVideo": ruta
     }
-    db.execute(sql, params)
-    db.commit()
-
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise
 
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
@@ -74,9 +78,12 @@ def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_pa
         "sepVideo": 1 if success else 0,
         "audioPath": audio_path
     }
-    db.execute(sql, params)
-    db.commit()
-
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
@@ -90,9 +97,12 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
         "transAudio": 1 if success else 0,
         "texto": transcript_text
     }
-    db.execute(sql, params)
-    db.commit()
-
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
@@ -106,9 +116,12 @@ def update_summarization(db: Session, sesion_id: int, success: bool, summary_tex
         "resumen": 1 if success else 0,
         "textoResumen": summary_text
     }
-    db.execute(sql, params)
-    db.commit()
-
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion_online: int) -> int:
     """
@@ -125,11 +138,14 @@ def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion
         "sesionId": sesion_online_id,
         "idResumen": id_resumen_grabacion_online
     }
-    result = db.execute(sql, params)
-    row = result.fetchone()
-    db.commit()
-    return row[0] if row else None
-
+    try:
+        result = db.execute(sql, params)
+        row = result.fetchone()
+        db.commit()
+        return row[0] if row else None
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, realizado: bool):
     """
@@ -146,9 +162,12 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
         "url": registro_url,
         "done": 1 if realizado else 0
     }
-    db.execute(sql, params)
-    db.commit()
-
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def get_summary_text(db: Session, sesion_id: int) -> str:
     """
