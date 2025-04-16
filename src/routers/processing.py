@@ -31,13 +31,15 @@ class TipoGenerarCreate(BaseModel):
 
 @router.post("/procesamiento/sesion-online/")
 def create_sesion_online(data: SesionOnlineCreate, db: Session = Depends(get_db)):
-    # Aquí estamos usando un modelo TProcesamientoSesionOnline (SQLAlchemy)
-    # que debería tener las columnas renombradas (IdPEspecifico, etc.)
-    sesion_online = TProcesamientoSesionOnline(**data.dict())
-    db.add(sesion_online)
-    db.commit()
-    db.refresh(sesion_online)
-    return sesion_online
+    try:
+        sesion_online = TProcesamientoSesionOnline(**data.dict())
+        db.add(sesion_online)
+        db.commit()
+        db.refresh(sesion_online)
+        return sesion_online
+    except Exception as e:
+        db.rollback()
+        raise e
 
 @router.get("/procesamiento/sesion-online/")
 def list_sesiones_online(db: Session = Depends(get_db)):
@@ -45,18 +47,22 @@ def list_sesiones_online(db: Session = Depends(get_db)):
 
 @router.post("/procesamiento/tipo-generar/")
 def create_tipo_generar(data: TipoGenerarCreate, db: Session = Depends(get_db)):
-    # Asegurarnos de que la sesión exista
+    # Verificar que exista la sesión relacionada
     session = db.query(TProcesamientoSesionOnline).filter(
         TProcesamientoSesionOnline.id == data.id_procesamiento_sesion_online
     ).first()
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    tipo_generar = TProcesamientoTipoGenerar(**data.dict())
-    db.add(tipo_generar)
-    db.commit()
-    db.refresh(tipo_generar)
-    return tipo_generar
+    try:
+        tipo_generar = TProcesamientoTipoGenerar(**data.dict())
+        db.add(tipo_generar)
+        db.commit()
+        db.refresh(tipo_generar)
+        return tipo_generar
+    except Exception as e:
+        db.rollback()
+        raise e
 
 @router.get("/procesamiento/tipo-generar/{session_id}")
 def list_tipos_generar(session_id: int, db: Session = Depends(get_db)):

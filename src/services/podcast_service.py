@@ -21,7 +21,9 @@ def generate_podcast(
     summary_file: str = None,
     audio_output: str = None,
     script_output: str = None,
-    pe_sesion_val: int = None
+    pe_sesion_val: int = None,
+    db = None,
+    sesion_id: int = None
 ) -> dict:
     """
     Generates a podcast from either raw summary text or a summary file.
@@ -50,6 +52,10 @@ def generate_podcast(
         script_output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(script_output_path, "w", encoding="utf-8") as script_file:
             script_file.write(podcast_script)
+        
+        if db and pe_sesion_val:
+            from src.repositories.procesamiento_repository import update_texto_guion_audio
+            update_texto_guion_audio(db=db, sesion_id=sesion_id, texto_guion_audio=podcast_script)
 
         # Convert the script to audio
         audio_output_path.parent.mkdir(parents=True, exist_ok=True)

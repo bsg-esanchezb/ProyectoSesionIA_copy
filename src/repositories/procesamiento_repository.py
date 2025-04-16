@@ -7,45 +7,47 @@ def create_sesion_online(db: Session, data: dict) -> int:
     or returns the existing Id if a record with the same
     IdPEspecificoSesion and UrlVideo already exists and is active (Estado = 1).
     """
-    # 1) Check for existing active record
-    sql_check = text("""
-        SELECT TOP 1 Id
-        FROM [ia].[T_ProcesamientoSesionOnline]
-        WHERE IdPEspecificoSesion = :idEspSes
-          AND UrlVideo = :urlVid
-          AND Estado = 1
-    """)
-    params_check = {
-        "idEspSes": data.get("IdPEspecificoSesion"),
-        "urlVid": data["UrlVideo"]
-    }
-    row_check = db.execute(sql_check, params_check).fetchone()
-    if row_check:
-        existing_id = row_check[0]
+    try:
+        # 1) Check for existing active record
+        sql_check = text("""
+            SELECT TOP 1 Id
+            FROM [ia].[T_ProcesamientoSesionOnline]
+            WHERE IdPEspecificoSesion = :idEspSes
+              AND UrlVideo = :urlVid
+              AND Estado = 1
+        """)
+        params_check = {
+            "idEspSes": data.get("IdPEspecificoSesion"),
+            "urlVid": data["UrlVideo"]
+        }
+        row_check = db.execute(sql_check, params_check).fetchone()
+        if row_check:
+            db.commit()
+            return row_check[0]
+
+        # 2) Insert if not found
+        sql_insert = text("""
+            EXEC ia.SP_TProcesamientoSesionOnline_Insertar
+                @IdPEspecificoSesion = :idEspSes,
+                @Sesion = :sesion,
+                @UrlVideo = :urlVid,
+                @UsuarioCreacion = :usuario,
+                @UsuarioModificacion = :usuario
+        """)
+        params_insert = {
+            "idEspSes": data.get("IdPEspecificoSesion"),
+            "sesion": data["Sesion"],
+            "urlVid": data["UrlVideo"],
+            "usuario": data["Usuario"]
+        }
+        result_insert = db.execute(sql_insert, params_insert)
+        row_insert = result_insert.fetchone()
         db.commit()
-        return existing_id
+        return row_insert[0] if row_insert else None
 
-    # 2) Insert the record via SP (note: we no longer send IdPEspecifico or TipoResumenGrabacionOnline)
-    sql_insert = text("""
-        EXEC ia.SP_TProcesamientoSesionOnline_Insertar
-            @IdPEspecificoSesion = :idEspSes,
-            @Sesion = :sesion,
-            @UrlVideo = :urlVid,
-            @UsuarioCreacion = :usuario,
-            @UsuarioModificacion = :usuario
-    """)
-    params_insert = {
-        "idEspSes": data.get("IdPEspecificoSesion"),
-        "sesion": data["Sesion"],
-        "urlVid": data["UrlVideo"],
-        "usuario": data["Usuario"]  # This field must be present in the request
-    }
-    result_insert = db.execute(sql_insert, params_insert)
-    row_insert = result_insert.fetchone()
-    db.commit()
-
-    new_id = row_insert[0] if row_insert else None
-    return new_id
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
@@ -197,3 +199,29 @@ def get_pe_sesion_value(db: Session, sesion_id: int) -> int | None:
     result = db.execute(sql, {"id": sesion_id})
     row = result.fetchone()
     return row[0] if row else None
+
+def update_texto_guion_audio(db: Session, sesion_id: int, texto_guion_audio: str):
+    sql = text("""
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarTextoGuionAudio
+            @Id = :id,
+            @TextoGuionAudio = :texto
+    """)
+    try:
+        db.execute(sql, {"id": sesion_id, "texto": texto_guion_audio})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
+def update_porcentaje_fidelidad(db: Session, sesion_id: int, porcentaje: int):
+    sql = text("""
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarPorcentajeFidelidad
+            @Id = :id,
+            @PorcentajeFidelidad = :porcentaje
+    """)
+    try:
+        db.execute(sql, {"id": sesion_id, "porcentaje": porcentaje})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e

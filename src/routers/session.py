@@ -20,8 +20,12 @@ class SessionCreate(BaseModel):
 
 @router.post("/sessions/")
 def create_session(session_data: SessionCreate, db: Session = Depends(get_db)):  
-    session = TAvisoProcesamiento(correo=session_data.correo, area=session_data.area)
-    db.add(session)
-    db.commit()
-    db.refresh(session)
-    return session
+    try:
+        session = TAvisoProcesamiento(correo=session_data.correo, area=session_data.area)
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+        return session
+    except Exception as e:
+        db.rollback()
+        raise e

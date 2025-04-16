@@ -38,7 +38,7 @@ class Summarizer:
         return f"""
 Objective
 
-Condense the provided transcription into approximately 2,000 words, focusing exclusively on the key concepts, central topics, and significant subtopics discussed. The response must exclude any information that is not relevant to the requested summary. Maintain a formal, clear, and professional tone throughout. The summary must strictly follow the original sequence of topics and subtopics without omitting key sections. The final output must be written in Spanish.
+Condense the provided transcription into approximately 4,000 words, focusing exclusively on the key concepts, central topics, and significant subtopics discussed. The response must exclude any information that is not relevant to the requested summary. Maintain a formal, clear, and professional tone throughout. The summary must strictly follow the original sequence of topics and subtopics without omitting key sections. The final output must be written in Spanish.
 
 Specific Instructions:
 General Summary of the Session:
@@ -82,7 +82,7 @@ Output must be only the summary following the instructions, do not include anyth
 {transcription}
 """
 
-    def analyze_transcription(self, transcription_file: str, output_file: str, model: str = "gpt-4o", temperature: float = 0.0, max_tokens: int = 16384) -> str:
+    def analyze_transcription(self, transcription_file: str, output_file: str, model: str = "gpt-4.1", temperature: float = 0.0, max_tokens: int = 16384) -> str:
         """
         Analyze transcription and generate structured summary.
         

@@ -16,6 +16,7 @@ from src.services.study_guide_service import generate_study_guide_pdf
 from src.services.concept_map_service import generate_concept_map_file
 from src.services.podcast_service import generate_podcast
 from src.services.blob_service import upload_file_to_blob
+from src.services.porcentaje_fidelidad_service import evaluate_fidelity_with_llm
 import os
 
 def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
@@ -72,6 +73,19 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
     # Obtain the value for IdPEspecificoSesion from the main record.
     pe_sesion_val = get_pe_sesion_value(db, sesion_id)
 
+    # 5.1) Fidelity Evaluation
+    print("5.1) Fidelity Evaluation (PorcentajeFidelidad)")
+    try:
+        fidelity_score = evaluate_fidelity_with_llm(
+            summary_text=summary_text,
+            script_text=transcript_text,
+            db=db,
+            sesion_id=sesion_id
+        )
+        print(f"Fidelity Score: {fidelity_score}")
+    except Exception as e:
+        print(f"Warning: Fidelity evaluation failed: {e}")
+
     # 6) Insert artifact rows (for optional artifacts)
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
     tipo_list = data.get("TipoResumenGrabacionOnline", [])
@@ -118,7 +132,7 @@ def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]
         try:
-            podcast_result = generate_podcast(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
+            podcast_result = generate_podcast(summary_text=summary_text, pe_sesion_val=pe_sesion_val, db=db, sesion_id=sesion_id)
             local_audio_path = podcast_result["audio_output"]
             audio_blob_url = upload_file_to_blob(
                 local_path=local_audio_path,
