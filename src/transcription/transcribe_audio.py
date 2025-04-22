@@ -23,8 +23,6 @@ def set_ffmpeg_paths():
     
     AudioSegment.ffmpeg = ffmpeg_path
     AudioSegment.ffprobe = ffprobe_path
-    print(f"[DEBUG] ffmpeg path set to: {ffmpeg_path}")
-    print(f"[DEBUG] ffprobe path set to: {ffprobe_path}")
 
 # Call once to set paths globally
 set_ffmpeg_paths()
@@ -76,7 +74,7 @@ def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_pat
         # This will fail if ffmpeg/ffprobe are not found
         audio = AudioSegment.from_mp3(audio_file_path)
         
-        chunk_length_ms = 60 * 1000
+        chunk_length_ms = 5 * 60 * 1000
         chunks = make_chunks(audio, chunk_length_ms)
         total_chunks = len(chunks)
 

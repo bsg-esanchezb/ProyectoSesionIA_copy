@@ -2,41 +2,56 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 def create_sesion_online(db: Session, data: dict) -> int:
-    sql = text("""
-        EXEC ia.sp_insert_sesion_online 
-            @IdProgramaGeneral = :IdProgramaGeneral,
-            @IdPEspecificoPadre = :IdPEspecificoPadre,
-            @IdPEspecificoHijo = :IdPEspecificoHijo,
-            @TipoPrograma = :TipoPrograma,
-            @Sesion = :Sesion,
-            @UrlVideo = :UrlVideo
-    """)
+    """
+    Inserts into T_ProcesamientoSesionOnline if not exists,
+    or returns the existing Id if a record with the same
+    IdPEspecificoSesion and UrlVideo already exists and is active (Estado = 1).
+    """
+    try:
+        # 1) Check for existing active record
+        sql_check = text("""
+            SELECT TOP 1 Id
+            FROM [ia].[T_ProcesamientoSesionOnline]
+            WHERE IdPEspecificoSesion = :idEspSes
+              AND UrlVideo = :urlVid
+              AND Estado = 1
+        """)
+        params_check = {
+            "idEspSes": data.get("IdPEspecificoSesion"),
+            "urlVid": data["UrlVideo"]
+        }
+        row_check = db.execute(sql_check, params_check).fetchone()
+        if row_check:
+            db.commit()
+            return row_check[0]
 
-    params = {
-        "IdProgramaGeneral": data["IdProgramaGeneral"],
-        "IdPEspecificoPadre": data.get("IdPEspecificoPadre"),
-        "IdPEspecificoHijo": data.get("IdPEspecificoHijo"),
-        "TipoPrograma": ",".join(map(str, data["TipoPrograma"]))
-            if isinstance(data["TipoPrograma"], list) else data["TipoPrograma"],
-        "Sesion": data["Sesion"],
-        "UrlVideo": data["UrlVideo"],
-    }
+        # 2) Insert if not found
+        sql_insert = text("""
+            EXEC ia.SP_TProcesamientoSesionOnline_Insertar
+                @IdPEspecificoSesion = :idEspSes,
+                @Sesion = :sesion,
+                @UrlVideo = :urlVid,
+                @UsuarioCreacion = :usuario,
+                @UsuarioModificacion = :usuario
+        """)
+        params_insert = {
+            "idEspSes": data.get("IdPEspecificoSesion"),
+            "sesion": data["Sesion"],
+            "urlVid": data["UrlVideo"],
+            "usuario": data["Usuario"]
+        }
+        result_insert = db.execute(sql_insert, params_insert)
+        row_insert = result_insert.fetchone()
+        db.commit()
+        return row_insert[0] if row_insert else None
 
-    # Execute the SP
-    result = db.execute(sql, params)
-
-    # **Fetch the result before committing**:
-    row = result.fetchone()  # row is something like (123,) if your SP does SELECT 123
-    db.commit()
-
-    # If your SP returns SELECT SCOPE_IDENTITY() as InsertedID
-    # then row = (InsertedID_value,)
-    new_id = row[0] if row else None
-    return new_id
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
     sql = text("""
-        EXEC ia.sp_update_video_state 
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarEstadoVideo
             @Id = :id,
             @DescargaExitosa = :descargaExitosa,
             @RutaVideo = :rutaVideo
@@ -46,29 +61,35 @@ def update_video_state(db: Session, sesion_id: int, success: bool, ruta: str):
         "descargaExitosa": 1 if success else 0,
         "rutaVideo": ruta
     }
-    db.execute(sql, params)
-    db.commit()
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise
 
 def update_audio_extraction(db: Session, sesion_id: int, success: bool, audio_path: str):
     sql = text("""
-        EXEC ia.sp_update_audio_extraction
+        EXEC ia.SP_TProcesamientoTipoGenerar_ActualizarExtraccionAudio
             @Id = :id,
             @SeparacionVideo = :sepVideo,
             @AudioVideo = :audioPath
     """)
-
     params = {
         "id": sesion_id,
         "sepVideo": 1 if success else 0,
         "audioPath": audio_path
     }
-
-    db.execute(sql, params)
-    db.commit()
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_transcription(db: Session, sesion_id: int, success: bool, transcript_text: str):
     sql = text("""
-        EXEC ia.sp_update_transcription
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarTranscripcion
             @Id = :id,
             @TranscripcionAudio = :transAudio,
             @TextoTranscripcion = :texto
@@ -76,14 +97,18 @@ def update_transcription(db: Session, sesion_id: int, success: bool, transcript_
     params = {
         "id": sesion_id,
         "transAudio": 1 if success else 0,
-        "texto": transcript_text  # <-- the entire transcript
+        "texto": transcript_text
     }
-    db.execute(sql, params)
-    db.commit()
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_summarization(db: Session, sesion_id: int, success: bool, summary_text: str):
     sql = text("""
-        EXEC ia.sp_update_summarization
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarResumen
             @Id = :id,
             @Resumen = :resumen,
             @TextoResumen = :textoResumen
@@ -91,36 +116,45 @@ def update_summarization(db: Session, sesion_id: int, success: bool, summary_tex
     params = {
         "id": sesion_id,
         "resumen": 1 if success else 0,
-        "textoResumen": summary_text  # the entire summary
+        "textoResumen": summary_text
     }
-    db.execute(sql, params)
-    db.commit()
-def insert_tipo_generar(db: Session, sesion_online_id: int, tipo: str) -> int:
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
+def insert_tipo_generar(db: Session, sesion_online_id: int, id_resumen_grabacion_online: int) -> int:
     """
-    Insert a row into T_ProcesamientoTipoGenerar for the given tipo.
+    Insert a row into T_ProcesamientoTipoGenerar, 
+    ahora usando la columna IdResumenGrabacionOnline (INT) en vez de 'Tipo' (string).
     Returns the newly inserted Id.
     """
     sql = text("""
-        EXEC ia.sp_insert_tipo_generar
+        EXEC ia.SP_TProcesamientoTipoGenerar_Insertar
             @IdProcesamientoSesionOnline = :sesionId,
-            @Tipo = :tipo
+            @IdResumenGrabacionOnline = :idResumen
     """)
     params = {
         "sesionId": sesion_online_id,
-        "tipo": tipo
+        "idResumen": id_resumen_grabacion_online
     }
-    result = db.execute(sql, params)
-    row = result.fetchone()  # e.g. (InsertedTipoGenerarID,)
-    db.commit()
-    return row[0] if row else None
-
+    try:
+        result = db.execute(sql, params)
+        row = result.fetchone()
+        db.commit()
+        return row[0] if row else None
+    except Exception as e:
+        db.rollback()
+        raise e
 
 def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, realizado: bool):
     """
     Update RegistroUrl and Realizado in T_ProcesamientoTipoGenerar.
     """
     sql = text("""
-        EXEC ia.sp_update_tipo_generar
+        EXEC ia.SP_TProcesamientoTipoGenerar_ActualizarTipoGenerar
             @Id = :id,
             @RegistroUrl = :url,
             @Realizado = :done
@@ -130,21 +164,64 @@ def update_tipo_generar(db: Session, tipo_generar_id: int, registro_url: str, re
         "url": registro_url,
         "done": 1 if realizado else 0
     }
-    db.execute(sql, params)
-    db.commit()
-    
+    try:
+        db.execute(sql, params)
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
 def get_summary_text(db: Session, sesion_id: int) -> str:
     """
-    Calls sp_get_summary_text to fetch TextoResumen from T_ProcesamientoSesionOnline.
+    Calls SP_TProcesamientoSesionOnline_ObtenerTextoResumen to fetch TextoResumen from T_ProcesamientoSesionOnline.
     Returns the summary text (str) or None if not found.
     """
-    sql = text("EXEC ia.sp_get_summary_text @Id = :id")
+    sql = text("EXEC ia.SP_TProcesamientoSesionOnline_ObtenerTextoResumen @Id = :id")
     params = {"id": sesion_id}
 
     result = db.execute(sql, params)
     row = result.fetchone()
-    db.commit()  # If the SP doesn't modify anything, commit is optional, but safe
+    db.commit()
 
     if row:
         return row[0]  # The first column is TextoResumen
     return None
+
+def get_pe_sesion_value(db: Session, sesion_id: int) -> int | None:
+    """
+    Devuelve el valor de IdPEspecificoSesion para un registro en T_ProcesamientoSesionOnline.
+    """
+    sql = text("""
+        SELECT IdPEspecificoSesion
+        FROM [ia].[T_ProcesamientoSesionOnline]
+        WHERE Id = :id
+    """)
+    result = db.execute(sql, {"id": sesion_id})
+    row = result.fetchone()
+    return row[0] if row else None
+
+def update_texto_guion_audio(db: Session, sesion_id: int, texto_guion_audio: str):
+    sql = text("""
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarTextoGuionAudio
+            @Id = :id,
+            @TextoGuionAudio = :texto
+    """)
+    try:
+        db.execute(sql, {"id": sesion_id, "texto": texto_guion_audio})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e
+
+def update_porcentaje_fidelidad(db: Session, sesion_id: int, porcentaje: int):
+    sql = text("""
+        EXEC ia.SP_TProcesamientoSesionOnline_ActualizarPorcentajeFidelidad
+            @Id = :id,
+            @PorcentajeFidelidad = :porcentaje
+    """)
+    try:
+        db.execute(sql, {"id": sesion_id, "porcentaje": porcentaje})
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise e

@@ -40,3 +40,18 @@ venv.bak/
 # Test files
 tests/
 test/
+
+
+data/input/videos/*
+data/output/concept_map/*
+data/output/podcast/*
+data/output/study_guides/*
+data/output/transcription/*
+data/output/videos/*
+data/temp/audios/*
+data/temp/chunks/*
+data/temp/podcast/*
+data/temp/podcast_text/*
+data/temp/summary/*
+data/output/transcriptions*
+

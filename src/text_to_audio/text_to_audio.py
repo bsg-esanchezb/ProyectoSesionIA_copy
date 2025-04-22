@@ -126,39 +126,32 @@ def generate_podcast_script(summary, temperature=DEFAULT_GPT_TEMPERATURE):
     logger.info(f"Generating podcast script with temperature: {temperature}")
     
     prompt_template = """
-Eres un narrador experto especializado en crear contenido educativo que sea fácil de seguir mientras se conduce. Tu objetivo es transformar el resumen de clase proporcionado en una narración cautivadora en español, diseñada específicamente para ser escuchada durante trayectos en coche.
+Paraphrase the given document in a professional narrative tone, beginning with a short, friendly welcome phrase, and developing the topics as if presenting an informative exposition. Make sure to preserve all essential aspects and details without omitting any critical information. Avoid using phrases like "We have seen" or "We have developed" in order to maintain a narrative suitable for an audiobook.
+Steps
+Read the original document: Make sure to fully understand the content of the document before attempting to paraphrase it.
 
-ESTILO DE NARRACIÓN:
-- Usa un tono conversacional y amigable, como si estuvieras hablando con un amigo inteligente
-- Evita palabras rebuscadas o estructuras complejas
-- Mantén las oraciones cortas y fáciles de seguir
-- No uses marcadores formales como "introducción", "en conclusión" o "en primer lugar"
-- Conecta las ideas de forma natural, como en una conversación fluida
 
-ESTRUCTURA:
-- Comienza con un pequeño resumen de la estructura general de la clase
-- Presenta las ideas principales de forma gradual y conectada
-- Usa analogías y ejemplos para explicar conceptos complejos
-- Incluye signos de puntuacion naturales entre ideas importantes
+Identify key ideas and topics: Look for the main ideas and critical details, and develop the themes as though you are giving a presentation.
 
-CARACTERÍSTICAS CLAVE:
-- Frases cortas y directas
-- Repetición estratégica de puntos clave de forma natural
-- Transiciones suaves y conversacionales entre ideas
-- Ritmo pausado que permita la absorción de información
-- Énfasis en las aplicaciones prácticas y relevantes del contenido
 
-EVITAR:
-- Jerga técnica innecesaria
-- Estructuras gramaticales complejas
-- Referencias a elementos visuales o que requieran atención visual
-- Listas largas o enumeraciones extensas
-- repeticion de oraciones o frases
+Rewrite the content: Use a professional narrative style to rephrase the document, paying attention to the flow and clarity of the narrative. Avoid expressions such as "We have seen" or "We have developed."
 
-El contenido a transformar es el siguiente:
-{}
 
-Recuerda: La persona necesita poder seguir el hilo sin esfuerzo y sin perder la concentración.
+Review and compare: Compare the new narrative with the original document to ensure that all information is present and no data has been omitted.
+
+
+Output Format
+The output should be a professional narrative with a welcoming phrase like "Welcome! In this study guide..." or "Welcome! Next, we will...", of an appropriate length for an audiobook, maintaining all the original content while developing the topics in an expository manner.
+Examples
+Input:
+ "The report mentions that climate change is affecting crops in various regions, leading to significant economic losses."
+Output:
+ "Welcome! In this study guide, we will explore the impact of climate change on crop production across different regions. We will examine the challenges faced by agricultural producers and how climate variability is influencing both production and food security globally, resulting in substantial economic losses that highlight the far-reaching consequences of this phenomenon on the agricultural economy."
+Notes
+Ensure the tone is professional and fluid, suitable for audiobook narration.
+Do not omit information or alter the original meaning of the text.
+Output language speech must be written in spanish latin american.
+this is the content to narrate: {}
 """
     try:
         summary_parts = split_text(summary)
@@ -167,9 +160,9 @@ Recuerda: La persona necesita poder seguir el hilo sin esfuerzo y sin perder la 
         for part in summary_parts:
             prompt = prompt_template.format(part)
             response = openai_client.chat.completions.create(
-                model="gpt-4o",
+                model="gpt-4.1",
                 messages=[
-                    {"role": "system", "content": "Eres un experto en temas STEM"},
+                    {"role": "system", "content": "You are an expert in educational narrations and STEM topics"},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=temperature

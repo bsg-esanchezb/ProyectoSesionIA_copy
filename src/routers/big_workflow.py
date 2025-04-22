@@ -3,41 +3,54 @@ from sqlalchemy.orm import Session
 from src.database import get_db
 from pydantic import BaseModel
 from src.services.big_workflow_service import orchestrate_big_workflow
+from src.repositories.procesamiento_repository import create_sesion_online
 from typing import List
 from src.celery_tasks.tasks import big_workflow_task
 
 router = APIRouter()
 
 class BigWorkflowRequest(BaseModel):
-    IdProgramaGeneral: int
-    IdPEspecificoPadre: int | None = None
-    IdPEspecificoHijo: int | None = None
-    TipoPrograma: list[int] = []
+    IdPEspecifico: int
+    IdPEspecificoSesion: int | None = None
+    TipoResumenGrabacionOnline: List[int] = []
     Sesion: str
     UrlVideo: str
+    Usuario: str
 
 @router.post("/big-workflow")
 def run_big_workflow(request: BigWorkflowRequest, db: Session = Depends(get_db)):
     try:
-        result = orchestrate_big_workflow(request.dict(), db)
+        # Insert the main record immediately to obtain the session ID.
+        sesion_id = create_sesion_online(db, request.dict())
+        # Call the orchestrator with the pre-created session ID.
+        result = orchestrate_big_workflow(sesion_id, request.dict(), db)
         return {
             "message": "Workflow triggered",
             "details": result
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
 @router.post("/batch", summary="Run multiple big workflow jobs asynchronously")
-def big_workflow_batch_endpoint(requests: List[BigWorkflowRequest]):
+def big_workflow_batch_endpoint(
+    requests: List[BigWorkflowRequest],
+    db: Session = Depends(get_db)
+):
     """
     Accepts an array of workflow inputs and queues each one in Celery.
     Returns a list of Celery task IDs.
     """
     task_ids = []
+
     for req in requests:
-        # Convert pydantic model to dict
+        # 1) Convierte Pydantic model a dict
         data = req.dict()
-        # Enqueue the Celery task
+
+        # 2) Crea (o recupera) la sesión => no más duplicados
+        sesion_id = create_sesion_online(db, data)
+        data["sesion_id"] = sesion_id
+
+        # 3) Encola la Celery task con el data ya actualizado
         result = big_workflow_task.delay(data)
         task_ids.append(result.id)
 

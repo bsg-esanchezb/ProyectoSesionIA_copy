@@ -1,15 +1,12 @@
-# src/services/big_workflow_service.py
-
 from src.repositories.procesamiento_repository import (
-    create_sesion_online,
     update_video_state,
+    get_pe_sesion_value,
     update_audio_extraction,
     update_transcription,
     update_summarization,
     insert_tipo_generar,
     update_tipo_generar
 )
-from src.database import SessionLocal
 from src.config import Config
 from src.services.video_service import download_video
 from src.services.audio_service import extract_audio
@@ -18,23 +15,21 @@ from src.services.summarization_service import summarize_transcription
 from src.services.study_guide_service import generate_study_guide_pdf
 from src.services.concept_map_service import generate_concept_map_file
 from src.services.podcast_service import generate_podcast
+from src.services.blob_service import upload_file_to_blob
+from src.services.porcentaje_fidelidad_service import evaluate_fidelity_with_llm
+import os
 
-def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
+def orchestrate_big_workflow(sesion_id: int, data: dict, db) -> dict:
     """
-    Orchestrates the entire flow:
-      1) Insert in T_ProcesamientoSesionOnline
-      2) Download video -> update DB
-      3) Extract audio -> update DB
-      4) Transcription -> store in DB
-      5) Summarize -> store in DB
-      6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts (PDF, ConceptMap, Podcast)
-      7) Generate each artifact with a unique timestamp-based filename
+    Orchestrates the entire flow starting from an already created main record.
+    Expects a pre-inserted session ID (sesion_id) and performs:
+      1) Video download -> update DB
+      2) Audio extraction -> update DB
+      3) Transcription -> update DB
+      4) Summarization -> update DB
+      5) Insertion of artifact rows in T_ProcesamientoTipoGenerar
+      6) Generation of final artifacts with unique timestamp-based filenames
     """
-
-    # 1) Insert main record
-    print("1) Insert main record")
-    sesion_id = create_sesion_online(db, data)
-
     # 2) Download video
     print("2) Download video")
     try:
@@ -75,51 +70,81 @@ def orchestrate_big_workflow(data: dict, db: SessionLocal) -> dict:
         update_summarization(db, sesion_id, success=False, summary_text=None)
         raise Exception(f"Summarization failed: {str(e)}")
 
-    # 6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts
+    # Obtain the value for IdPEspecificoSesion from the main record.
+    pe_sesion_val = get_pe_sesion_value(db, sesion_id)
+
+    # 5.1) Fidelity Evaluation
+    print("5.1) Fidelity Evaluation (PorcentajeFidelidad)")
+    try:
+        fidelity_score = evaluate_fidelity_with_llm(
+            summary_text=summary_text,
+            script_text=transcript_text,
+            db=db,
+            sesion_id=sesion_id
+        )
+        print(f"Fidelity Score: {fidelity_score}")
+    except Exception as e:
+        print(f"Warning: Fidelity evaluation failed: {e}")
+
+    # 6) Insert artifact rows (for optional artifacts)
     print("6) Insert rows in T_ProcesamientoTipoGenerar for optional artifacts")
-    tipo_programa = data.get("TipoPrograma", [])
+    tipo_list = data.get("TipoResumenGrabacionOnline", [])
+    # Mapping: 1 => PDF, 2 => ConceptMap, 3 => Podcast.
     tipos_mapping = {1: "PDF", 2: "ConceptMap", 3: "Podcast"}
     artifact_ids = {}
+    for tipo_id in tipo_list:
+        row_id = insert_tipo_generar(db, sesion_id, tipo_id)
+        tipo_str = tipos_mapping.get(tipo_id, f"Unknown_{tipo_id}")
+        artifact_ids[tipo_str] = row_id
 
-    for tipo_id in tipo_programa:
-        tipo_str = tipos_mapping.get(tipo_id)
-        if tipo_str:
-            row_id = insert_tipo_generar(db, sesion_id, tipo_str)
-            artifact_ids[tipo_str] = row_id
-
-    # 7) Generate final artifacts (using timestamp-based filenames inside each service)
-    # PDF
+    # 7) Generate final artifacts (using timestamp-based filenames)
     print("7) Generate final artifacts (using timestamp-based filenames inside each service)")
+
+    # PDF Artifact
     print("PDF")
     if "PDF" in artifact_ids:
         pdf_id = artifact_ids["PDF"]
         try:
-            pdf_path = generate_study_guide_pdf(summary_text=summary_text)
-            update_tipo_generar(db, pdf_id, pdf_path, realizado=True)
+            pdf_path = generate_study_guide_pdf(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
+            pdf_blob_url = upload_file_to_blob(
+                local_path=pdf_path,
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_PDFS
+            )
+            update_tipo_generar(db, pdf_id, pdf_blob_url, realizado=True)
+            os.remove(pdf_path)
         except Exception as e:
             update_tipo_generar(db, pdf_id, None, realizado=False)
             raise e
 
-    # Concept Map
+    # Concept Map Artifact
     print("Concept Map")
     if "ConceptMap" in artifact_ids:
         cm_id = artifact_ids["ConceptMap"]
         try:
-            cm_path = generate_concept_map_file(summary_text=summary_text)
+            cm_path = generate_concept_map_file(summary_text=summary_text, pe_sesion_val=pe_sesion_val)
             update_tipo_generar(db, cm_id, cm_path, realizado=True)
         except Exception as e:
             update_tipo_generar(db, cm_id, None, realizado=False)
             raise e
-
-    # Podcast
+        
+    # Podcast Artifact
     print("Podcast")
     if "Podcast" in artifact_ids:
         pod_id = artifact_ids["Podcast"]
         try:
-            podcast_result = generate_podcast(summary_text=summary_text)
-            update_tipo_generar(db, pod_id, podcast_result["audio_output"], realizado=True)
+            podcast_result = generate_podcast(summary_text=summary_text, pe_sesion_val=pe_sesion_val, db=db, sesion_id=sesion_id)
+            local_audio_path = podcast_result["audio_output"]
+            audio_blob_url = upload_file_to_blob(
+                local_path=local_audio_path,
+                blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_AUDIO
+            )
+            update_tipo_generar(db, pod_id, audio_blob_url, realizado=True)
+            os.remove(local_audio_path)
         except Exception as e:
             update_tipo_generar(db, pod_id, None, realizado=False)
             raise e
 
-    return {"message": "Workflow completed successfully", "sesion_id": sesion_id}
+    return {
+        "message": "Workflow completed successfully",
+        "sesion_id": sesion_id
+    }
