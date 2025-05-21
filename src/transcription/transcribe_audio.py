@@ -1,157 +1,210 @@
-import openai
-from pydub import AudioSegment
-from pydub.utils import make_chunks
-from tqdm import tqdm
 import os
-import glob
+import requests
+import time
+import json
+from src.config import Config
 from pathlib import Path
-from dotenv import load_dotenv
-from shutil import which   
-import gc 
 
-# Load environment variables
-load_dotenv()
-openai.api_key = os.getenv('OPENAI_API_KEY')
-
-# Dynamically detect ffmpeg and ffprobe paths with a fallback to .env
-def set_ffmpeg_paths():
-    ffmpeg_path = os.getenv('FFMPEG_PATH') or which("ffmpeg")
-    ffprobe_path = os.getenv('FFPROBE_PATH') or which("ffprobe")
-
-    if not ffmpeg_path or not ffprobe_path:
-        raise FileNotFoundError("ffmpeg or ffprobe not found. Ensure they are installed and correctly set.")
-    
-    AudioSegment.ffmpeg = ffmpeg_path
-    AudioSegment.ffprobe = ffprobe_path
-    print(f"[DEBUG] ffmpeg path set to: {ffmpeg_path}")
-    print(f"[DEBUG] ffprobe path set to: {ffprobe_path}")
-
-# Call once to set paths globally
-set_ffmpeg_paths()
-
-def cleanup_temp_files(temp_chunks_path):
-    """Clean up temporary WAV chunks"""
-    temp_files = glob.glob(os.path.join(temp_chunks_path, "temp_chunk_*.wav"))
-    for temp_file in temp_files:
-        try:
-            os.remove(temp_file)
-        except Exception as e:
-            print(f"Warning: Could not remove temporary file {temp_file}: {str(e)}")
-
-def get_file_size(file_path):
-    """Get file size in bytes"""
-    return os.path.getsize(file_path)
-
-def validate_mp3_file(file_path):
-    """Validate if file is MP3 and exists"""
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"Audio file not found: {file_path}")
-    
-    if not file_path.lower().endswith('.mp3'):
-        raise ValueError(f"File must be MP3 format: {file_path}")
-
-def transcribe_audio(audio_file_path, output_transcription_path, temp_chunks_path) -> str:
+def transcribe_audio(audio_file_url: str, output_transcription_file_path: str) -> str:
     """
-    Transcribe MP3 audio file to text using OpenAI's Whisper model
-    
+    Transcribe an audio file using Azure Speech-to-Text batch transcription.
+
     Args:
-        audio_file_path (str): Path to input MP3 file
-        output_transcription_path (str): Path where to save transcription
-        temp_chunks_path (str): Directory for temporary chunk files
-    
+        audio_file_url (str): Publicly accessible URL of the audio file to transcribe.
+                              Azure needs to be able to access this URL.
+        output_transcription_file_path (str): Path to save the full JSON response from Azure.
+                                               The extracted text will be returned by the function.
+
     Returns:
-        str: The complete transcription text
+        str: The concatenated display text from the transcription.
+
+    Raises:
+        Exception: If any part of the transcription process fails.
     """
-    print(f"[DEBUG] Using ffmpeg path: {AudioSegment.ffmpeg}")
-    print(f"[DEBUG] Using ffprobe path: {AudioSegment.ffprobe}")
+    print(f"Starting Azure batch transcription for: {audio_file_url}")
 
-    print("validando el archivo mp3")
-    validate_mp3_file(audio_file_path)
-    os.makedirs(temp_chunks_path, exist_ok=True)
-    cleanup_temp_files(temp_chunks_path)
-    full_transcription = ""
+    azure_speech_key = Config.AZURE_SPEECH_KEY
+    azure_speech_endpoint = Config.AZURE_SPEECH_ENDPOINT.replace("https://", "").replace("/", "") # Ensure correct format
 
+    if not azure_speech_key:
+        raise ValueError("AZURE_SPEECH_KEY is not configured.")
+    if not azure_speech_endpoint:
+        raise ValueError("AZURE_SPEECH_ENDPOINT is not configured.")
+
+    # 1. Submit Transcription Job
+    # Using API version 2024-11-15
+    submit_url = f"https://{azure_speech_endpoint}/speechtotext/transcriptions?api-version=2024-11-15"
+    
+    headers = {
+        "Ocp-Apim-Subscription-Key": azure_speech_key,
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "contentUrls": [audio_file_url],
+        "locale": "es-ES",  # Primary language specifier
+        "displayName": f"batch-transcription-job-{Path(audio_file_url).stem}", # Dynamic display name
+        "properties": {
+            "wordLevelTimestampsEnabled": False # Verify if this is still supported and needed
+            # "language": "es-ES", # Removed as locale is set at top level
+            # Other properties like 'profanityFilterMode', 'punctuationMode' could be added here if needed.
+        }
+        # "locale": "es-ES" # Moved to top level
+    }
+
+    print(f"Submitting transcription job to: {submit_url}")
     try:
-        print(f"Loading MP3 file: {audio_file_path}")
-        # This will fail if ffmpeg/ffprobe are not found
-        audio = AudioSegment.from_mp3(audio_file_path)
-        
-        chunk_length_ms = 60 * 1000
-        chunks = make_chunks(audio, chunk_length_ms)
-        total_chunks = len(chunks)
-
-        del audio
-
-        print(f"Starting transcription of {total_chunks} chunks...")
-        for i, chunk in enumerate(tqdm(chunks, desc="Processing chunks"), 1):
-            chunk_path = os.path.join(temp_chunks_path, f"temp_chunk_{i}.wav")
-            try:
-                chunk.export(chunk_path, format="wav")
-                del chunk
-                file_size = get_file_size(chunk_path)
-                if file_size > 25 * 1024 * 1024:
-                    print(f"\nWarning: Chunk {i} is {file_size/1024/1024:.2f}MB, exceeding 25MB limit. Skipping...")
-                    continue
-                
-                with open(chunk_path, "rb") as audio_file:
-                    response = openai.audio.transcriptions.create(
-                        model="whisper-1",
-                        file=audio_file,
-                        language="es"
-                    )
-                full_transcription += response.text + " "
-
-            except Exception as e:
-                print(f"\nError processing chunk {i}: {str(e)}")
-            
-            finally:
-                if os.path.exists(chunk_path):
-                    os.remove(chunk_path)
-                gc.collect()
-                
-        print("\nTranscription completed!")
-        
-        os.makedirs(os.path.dirname(output_transcription_path), exist_ok=True)
-        with open(output_transcription_path, "w", encoding="utf-8") as file:
-            file.write(full_transcription.strip())
-            
-        return full_transcription.strip()
-
-    except Exception as e:
+        response = requests.post(submit_url, headers=headers, json=payload)
+        response.raise_for_status()  # Raise HTTPError for bad responses (4xx or 5xx)
+        submission_response_json = response.json()
+        status_url = submission_response_json.get("self")
+        if not status_url:
+            raise ValueError("Failed to get status URL from submission response.")
+        print(f"Transcription job submitted. Status URL: {status_url}")
+    except requests.exceptions.RequestException as e:
+        print(f"Error submitting transcription job: {e}")
+        if e.response is not None:
+            print(f"Response content: {e.response.text}")
+        raise
+    except (ValueError, KeyError) as e:
+        print(f"Error processing submission response: {e}")
         raise
 
-    finally:
-        cleanup_temp_files(temp_chunks_path)
+    # 2. Poll for Status
+    files_url = None
+    max_retries = 60 # Poll for up to 30 minutes (60 retries * 30 seconds)
+    retries = 0
+    
+    print("Polling for transcription status...")
+    while retries < max_retries:
+        try:
+            status_response = requests.get(status_url, headers={"Ocp-Apim-Subscription-Key": azure_speech_key})
+            status_response.raise_for_status()
+            status_json = status_response.json()
+            current_status = status_json.get("status")
+            print(f"Current job status: {current_status} (Attempt {retries + 1}/{max_retries})")
 
-def main():
-    """Main execution function"""
+            if current_status == "Succeeded":
+                files_url = status_json.get("links", {}).get("files")
+                if not files_url:
+                     # For API version 2024-11-15, the files link structure should be similar.
+                     # If issues arise, this is where to check Azure's response for the correct path to files.
+                    raise ValueError("Could not find 'files' URL in successful job status.")
+                print("Transcription job succeeded.")
+                break
+            elif current_status == "Failed":
+                error_details = status_json.get("properties", {}).get("error", {})
+                print(f"Transcription job failed. Error: {error_details}")
+                raise Exception(f"Azure transcription failed: {error_details.get('message', 'Unknown error')}")
+            elif current_status in ["Running", "NotStarted"]:
+                time.sleep(30)  # Wait 30 seconds before polling again
+                retries += 1
+            else: # Unexpected status
+                print(f"Unexpected job status: {current_status}")
+                raise Exception(f"Unexpected Azure transcription status: {current_status}")
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error polling status: {e}")
+            # Depending on the error, you might want to retry or fail fast
+            time.sleep(30) 
+            retries += 1 
+        except (ValueError, KeyError) as e:
+            print(f"Error processing status response: {e}")
+            raise
+
+
+    if not files_url:
+        raise Exception("Transcription job did not complete successfully or files URL not found after polling.")
+
+    # 3. Retrieve Transcription
+    print(f"Retrieving transcription files from: {files_url}")
     try:
-        # Define the absolute paths directly
-        input_mp3 = r"C:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\audios\OCTUBRE_18_10_24_CERTI_R_DATA_SCIENTIST_ONLINE_2024_I_LIMA_Curso_CRISP_DM_en_Proyectos_de_Data_Science_ONLINE_2024_I_17_10_24.mp3"
-        output_text = r"C:\Users\esanchezb\Documents\Project_cafe_v2\data\output\transcriptions\transcription.txt"
-        temp_dir = r"C:\Users\esanchezb\Documents\Project_cafe_v2\data\temp\chunks"
+        files_response = requests.get(files_url, headers={"Ocp-Apim-Subscription-Key": azure_speech_key})
+        files_response.raise_for_status()
+        files_json = files_response.json()
+        
+        transcription_content_url = None
+        for file_info in files_json.get("values", []):
+            if file_info.get("kind") == "transcription":
+                transcription_content_url = file_info.get("links", {}).get("contentUrl")
+                break
+        
+        if not transcription_content_url:
+            raise ValueError("Could not find transcription file content URL in files response.")
 
-        # Ensure required directories exist
-        os.makedirs(temp_dir, exist_ok=True)
-        os.makedirs(os.path.dirname(output_text), exist_ok=True)
+        print(f"Downloading transcription from: {transcription_content_url}")
+        transcription_result_response = requests.get(transcription_content_url) # No auth header needed for contentUrl usually
+        transcription_result_response.raise_for_status()
+        azure_response_json = transcription_result_response.json()
 
-        # Check if OpenAI API key is set
-        if not openai.api_key:
-            raise ValueError("OpenAI API key not found. Please check your .env file.")
+    except requests.exceptions.RequestException as e:
+        print(f"Error retrieving transcription files/result: {e}")
+        raise
+    except (ValueError, KeyError) as e:
+        print(f"Error processing files response or transcription result: {e}")
+        raise
 
-        print(f"Processing MP3 file: {input_mp3}")
-        print(f"Output will be saved to: {output_text}")
-        print(f"Using temporary directory: {temp_dir}")
+    # 4. Save Full JSON Response
+    output_dir = Path(output_transcription_file_path).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    with open(output_transcription_file_path, "w", encoding="utf-8") as f:
+        json.dump(azure_response_json, f, ensure_ascii=False, indent=4)
+    print(f"Full Azure transcription JSON saved to: {output_transcription_file_path}")
 
-        # Start transcription
-        transcribe_audio(input_mp3, output_text, temp_dir)
+    # 5. Extract Display Text
+    # Based on typical Azure Speech API structure for combined result.
+    # This logic should be robust for API version 2024-11-15 as well.
+    # The key "combinedRecognizedPhrases" might not exist if the audio is too short or no speech is detected.
+    # "recognizedPhrases" contains segment-level details.
+    full_transcription = ""
+    if "combinedRecognizedPhrases" in azure_response_json and azure_response_json["combinedRecognizedPhrases"]:
+        full_transcription = azure_response_json["combinedRecognizedPhrases"][0].get("display", "")
+    elif "recognizedPhrases" in azure_response_json: # Fallback to joining individual recognized phrases
+        transcription_parts = []
+        for phrase in azure_response_json["recognizedPhrases"]:
+            # 'lexical' is often the most accurate, 'display' is formatted for readability
+            transcription_parts.append(phrase.get("lexical", phrase.get("display", "")))
+        full_transcription = " ".join(filter(None, transcription_parts))
+    else:
+        print("Warning: Could not find 'combinedRecognizedPhrases' or 'recognizedPhrases' in Azure response.")
+        # This might happen for empty audio or if Azure returns an unexpected structure.
 
-    except Exception as e:
-        print(f"Error: {str(e)}")
-        return 1
+    print(f"Transcription extracted: '{full_transcription[:100]}...'") # Print a snippet
+    return full_transcription.strip()
 
-    return 0
+# def main():
+#     """Main execution function - Example for testing (requires a public URL)"""
+#     # This is an example and needs a publicly accessible audio URL.
+#     # For local files, you'd need to upload them to a service like Azure Blob Storage first.
+#     # example_audio_url = "YOUR_PUBLICLY_ACCESSIBLE_AUDIO_URL.mp3" # Or .wav, etc.
+#     # example_output_json = "data/output/transcriptions/azure_transcription_output.json"
+#     #
+#     # # Ensure Config has AZURE_SPEECH_KEY and AZURE_SPEECH_ENDPOINT set in .env or environment
+#     # if not Config.AZURE_SPEECH_KEY or not Config.AZURE_SPEECH_ENDPOINT:
+#     #     print("Error: Azure Speech credentials (AZURE_SPEECH_KEY, AZURE_SPEECH_ENDPOINT) not configured.")
+#     #     print("Please set them in your .env file or environment variables.")
+#     #     return 1
+#     #
+#     # try:
+#     #     print(f"Starting transcription for example URL: {example_audio_url}")
+#     #     Path(example_output_json).parent.mkdir(parents=True, exist_ok=True) # Ensure output dir exists
+#     #
+#     #     transcribed_text = transcribe_audio(example_audio_url, example_output_json)
+#     #     print("\n--- Full Transcribed Text ---")
+#     #     print(transcribed_text)
+#     #     print(f"\nFull Azure JSON response saved to: {example_output_json}")
+#     #
+#     # except ValueError as ve: # Specific for config errors
+#     #     print(f"Configuration Error: {ve}")
+#     #     return 1
+#     # except Exception as e:
+#     #     print(f"An error occurred during transcription: {str(e)}")
+#     #     return 1
+#     #
+#     # return 0
 
-if __name__ == "__main__":
-    exit_code = main()
-    exit(exit_code)
+# if __name__ == "__main__":
+#     # Note: Running this directly requires Azure credentials and a public audio URL.
+#     # exit_code = main()
+#     # exit(exit_code)
+    pass # Keep the file importable without running main automatically

@@ -13,6 +13,8 @@ class Config:
     VIMEO_ACCESS_TOKEN = os.getenv("VIMEO_ACCESS_TOKEN", "")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    AZURE_SPEECH_ENDPOINT = os.getenv("AZURE_SPEECH_ENDPOINT", "westus.api.cognitive.microsoft.com")
+    AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")
 
     # Database and Celery
     DATABASE_URL = os.getenv("DATABASE_URL", "")
