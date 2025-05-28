@@ -13,6 +13,8 @@ class Config:
     VIMEO_ACCESS_TOKEN = os.getenv("VIMEO_ACCESS_TOKEN", "")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
     GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    AZURE_SPEECH_KEY = os.getenv("AZURE_SPEECH_KEY", "")
+    AZURE_SPEECH_ENDPOINT = os.getenv("AZURE_SPEECH_ENDPOINT", "")
 
     # Database and Celery
     DATABASE_URL = os.getenv("DATABASE_URL", "")
@@ -42,6 +44,7 @@ class Config:
     AZURE_BLOB_CONTAINER = os.getenv("AZURE_BLOB_CONTAINER", "procesoresumenia")
     AZURE_BLOB_SUBFOLDER_PDFS = os.getenv("AZURE_BLOB_SUBFOLDER_PDFS", "PDFs")
     AZURE_BLOB_SUBFOLDER_AUDIO = os.getenv("AZURE_BLOB_SUBFOLDER_AUDIO", "ResumenAudio")
+    AZURE_BLOB_SUBFOLDER_TEMP_AUDIO = os.getenv("AZURE_BLOB_SUBFOLDER_TEMP_AUDIO", "TempAudio")
 
     # Mermaid CLI location
     MERMAID_CLI_PATH = os.getenv("MERMAID_CLI_PATH", r"C:\Users\esanchezb\AppData\Roaming\npm\mmdc.cmd")

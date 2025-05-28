@@ -1,4 +1,5 @@
-from src.transcription.transcribe_audio import transcribe_audio
+from src.transcription.transcribe_audio import transcribe_audio_azure
+from src.services.blob_service import upload_file_to_blob
 from pathlib import Path
 import os
 from src.config import Config
@@ -35,12 +36,22 @@ def transcribe_audio_file(
         print("antes de declarar las direcciones del output path")
         output_path = Path(output_directory) / f"{audio_path.stem}_transcription.txt"
 
-        transcription_text = transcribe_audio(
-            audio_file_path=str(audio_path),
-            output_transcription_path=str(output_path),
-            temp_chunks_path=str(temp_chunks_directory)
+        # Upload audio to Azure Blob Storage
+        print(f"Uploading {audio_path} to Azure Blob Storage in subfolder {Config.AZURE_BLOB_SUBFOLDER_TEMP_AUDIO}...")
+        audio_url = upload_file_to_blob(
+            local_path=str(audio_path),
+            blob_subfolder=Config.AZURE_BLOB_SUBFOLDER_TEMP_AUDIO
+        )
+        print(f"Audio uploaded to: {audio_url}")
+
+        # Call Azure transcription service
+        transcription_text = transcribe_audio_azure(
+            audio_url=audio_url,
+            output_transcription_path=str(output_path)
+            # locale can be passed if needed, default is "es-ES" in transcribe_audio_azure
         )
         
         return transcription_text, str(output_path)
     except Exception as e:
+        # Consider more specific error logging here if needed
         raise Exception(f"Transcription failed: {str(e)}")
